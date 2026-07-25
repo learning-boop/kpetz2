@@ -1,0 +1,131 @@
+import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { PawMark } from "./decor/Decor";
+
+const SHOP = ["Dog food", "Cat food", "Bird supplies", "Collars & leads", "Toys", "Grooming kits"];
+const COMPANY = ["About us", "Our services", "Adoption", "Gift cards", "Store locator", "Careers"];
+
+export default function Footer() {
+  return (
+    <footer id="contact" className="relative overflow-hidden bg-ink text-cream">
+      <PawMark className="pointer-events-none absolute -right-16 top-10 h-72 w-72 -rotate-12 text-white/5" />
+
+      <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+        <div>
+          <a href="#home" className="flex items-center gap-2.5">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-brand">
+              <PawMark className="h-5 w-5 text-white" />
+            </span>
+            <span className="font-display text-[28px] font-black tracking-tight">Kpetz</span>
+          </a>
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-cream/70">
+            A pet store run by trainers and vets. Premium supplies, honest advice and care that
+            treats your animal like our own.
+          </p>
+          <div className="mt-6 flex gap-3">
+            {[
+              { Icon: Instagram, label: "Instagram" },
+              { Icon: Facebook, label: "Facebook" },
+              { Icon: Youtube, label: "YouTube" },
+            ].map(({ Icon, label }) => (
+              <a
+                key={label}
+                href="#contact"
+                aria-label={label}
+                className="grid h-11 w-11 place-items-center rounded-full bg-white/10 transition hover:bg-brand"
+              >
+                <Icon className="h-4.5 w-4.5" />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <nav aria-label="Shop">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+            Shop
+          </h2>
+          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
+            {SHOP.map((item) => (
+              <li key={item}>
+                <a href="#shop" className="transition hover:text-brand">
+                  {item}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Company">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+            Company
+          </h2>
+          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
+            {COMPANY.map((item) => (
+              <li key={item}>
+                <a href="#about" className="transition hover:text-brand">
+                  {item}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div>
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+            Get in touch
+          </h2>
+          <ul className="mt-5 grid gap-4 text-[15px] text-cream/75">
+            <li className="flex gap-3">
+              <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
+              MG Road, Labbipet, Vijayawada 520010
+            </li>
+            <li className="flex gap-3">
+              <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
+              <a href="tel:+919876543210" className="hover:text-brand">
+                +91 98765 43210
+              </a>
+            </li>
+            <li className="flex gap-3">
+              <Mail className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
+              <a href="mailto:hello@kpetz.com" className="hover:text-brand">
+                hello@kpetz.com
+              </a>
+            </li>
+          </ul>
+
+          <form onSubmit={(e) => e.preventDefault()} className="mt-6">
+            <label htmlFor="news" className="mb-2 block text-sm font-semibold text-cream/70">
+              Monthly care tips, no spam.
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="news"
+                type="email"
+                required
+                placeholder="Your email"
+                className="min-w-0 flex-1 rounded-full border-2 border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-cream outline-none placeholder:text-cream/45 focus:border-brand"
+              />
+              <button className="btn btn-primary px-6">Join</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-xs font-semibold text-cream/55 sm:flex-row">
+          <p>© {new Date().getFullYear()} Kpetz. All rights reserved.</p>
+          <p className="flex gap-5">
+            <a href="#contact" className="hover:text-brand">
+              Privacy
+            </a>
+            <a href="#contact" className="hover:text-brand">
+              Terms
+            </a>
+            <a href="#contact" className="hover:text-brand">
+              Shipping
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}

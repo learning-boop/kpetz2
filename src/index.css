@@ -1,0 +1,335 @@
+@import "tailwindcss" source(none);
+@source "./";
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-bark: var(--bark);
+  --color-line: var(--line);
+
+  --color-background: var(--cream);
+  --color-foreground: var(--ink);
+  --color-card: #ffffff;
+  --color-muted: var(--cream-deep);
+  --color-muted-foreground: var(--ink-soft);
+  --color-border: var(--line);
+
+  --font-display: "Chivo", "Arial Black", sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+  --font-script: "Caveat", cursive;
+}
+
+:root {
+  --cream: #faf3ea;
+  --cream-deep: #f2e7d7;
+  --sand: #e9dcc6;
+  --ink: #2a2724;
+  --ink-soft: #6d645b;
+  --brand: #ef7b22;
+  --brand-deep: #d2661a;
+  --bark: #463933;
+  --line: #e3d7c4;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 500;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, p, a, li, blockquote {
+    overflow-wrap: break-word;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  img {
+    display: block;
+  }
+}
+
+/* ---------- layout ---------- */
+
+@utility container-x {
+  width: 100%;
+  max-width: 82.5rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (min-width: 480px) { padding-inline: 1.25rem; }
+  @media (min-width: 768px) {
+    padding-inline: 2rem;
+  }
+  @media (min-width: 1280px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+@utility section-y {
+  padding-block: 4.5rem;
+  @media (min-width: 768px) {
+    padding-block: 6rem;
+  }
+  @media (min-width: 1280px) {
+    padding-block: 7.5rem;
+  }
+}
+
+/* ---------- type ---------- */
+
+@utility eyebrow {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+@utility display-xl {
+  font-size: clamp(1.875rem, 7.5vw, 4.5rem);
+}
+
+@utility display-lg {
+  font-size: clamp(1.75rem, 6vw, 3.5rem);
+}
+
+@utility display-md {
+  font-size: clamp(1.375rem, 3.4vw, 2rem);
+}
+
+@utility lede {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--ink-soft);
+}
+
+/* ---------- controls ---------- */
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.95rem 1.9rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+  white-space: nowrap;
+}
+
+@utility btn-primary {
+  background-color: var(--brand);
+  color: #fff;
+  &:hover {
+    background-color: var(--ink);
+    transform: translateY(-2px);
+  }
+}
+
+@utility btn-ink {
+  background-color: var(--ink);
+  color: var(--cream);
+  &:hover {
+    background-color: var(--brand);
+    transform: translateY(-2px);
+  }
+}
+
+@utility btn-outline {
+  border: 2px solid currentColor;
+  background: transparent;
+  &:hover {
+    background-color: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+}
+
+@utility field {
+  width: 100%;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-color: #fff;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s ease;
+  &::placeholder {
+    color: color-mix(in srgb, var(--ink-soft) 65%, transparent);
+    font-weight: 500;
+  }
+  &:focus {
+    border-color: var(--ink);
+  }
+}
+
+/* ---------- motion ---------- */
+
+@utility reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float-y {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+/* ---------- cut-outs ---------- */
+
+/**
+ * Top-left notch carved out of a photo, with concave flares either side so the
+ * photo edge curves into the cut rather than meeting it at a hard corner.
+ * Sizes are fixed px on purpose — the cut stays the same size at every width.
+ */
+@utility notch-tl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: 7rem;
+  height: 7rem;
+  background-color: var(--cream);
+  border-bottom-right-radius: 1.75rem;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: radial-gradient(
+      circle 1.75rem at 100% 100%,
+      transparent 0 1.74rem,
+      var(--cream) 1.75rem
+    );
+  }
+  /* flare below the notch, against the photo's left edge */
+  &::before {
+    top: 100%;
+    left: 0;
+  }
+  /* flare right of the notch, against the photo's top edge */
+  &::after {
+    top: 0;
+    left: 100%;
+  }
+}
+
+/**
+ * Gap that makes a round element read as a hole punched through whatever sits
+ * behind it. Defaults to the page cream; set `--cut-bg` on an ancestor to match
+ * a different surface (the services panel sets it to `--bark`).
+ */
+@utility cut-ring {
+  box-shadow: 0 0 0 0.75rem var(--cut-bg, var(--cream));
+}
+
+@utility spin-slow {
+  animation: spin-slow 22s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@utility float-y {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- misc ---------- */
+
+.no-scroll {
+  overflow: hidden;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* ---------- booking dialog ---------- */
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+dialog.booking-dialog {
+  margin: auto;
+  width: min(100% - 1.5rem, 34rem);
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+dialog.booking-dialog[open] {
+  animation: dialog-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+dialog.booking-dialog::backdrop {
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  backdrop-filter: blur(3px);
+}
