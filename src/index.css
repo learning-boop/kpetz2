@@ -333,3 +333,16 @@ dialog.booking-dialog::backdrop {
   background: color-mix(in srgb, var(--ink) 72%, transparent);
   backdrop-filter: blur(3px);
 }
+
+/* ---------- video ---------- */
+
+/**
+ * iOS paints its own play glyph over any inline video that hasn't started.
+ * We supply our own tap target, so hide the native one to avoid two buttons.
+ */
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none;
+}

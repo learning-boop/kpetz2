@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
-import { Bird, Bone, Cat, Dog, Heart, Home, Menu, Search, ShoppingBag, Sparkles, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bird,
+  Bone,
+  Cat,
+  Dog,
+  Heart,
+  Home,
+  Menu,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { PawMark } from "./decor/Decor";
 import { useBooking } from "./BookingProvider";
 
@@ -21,23 +36,108 @@ const CATEGORIES = [
   { label: "Shop for birds", Icon: Bird },
 ];
 
+const CATEGORY_HOLD = 3800;
+
 export function TopBar() {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  // Read synchronously so the desktop row doesn't flash the carousel first.
+  const [isWide, setIsWide] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1280px)").matches
+  );
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 1280px)");
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      setIsWide(wide.matches);
+      setReduceMotion(motion.matches);
+    };
+    sync();
+    wide.addEventListener("change", sync);
+    motion.addEventListener("change", sync);
+    return () => {
+      wide.removeEventListener("change", sync);
+      motion.removeEventListener("change", sync);
+    };
+  }, []);
+
+  const go = (step: number) =>
+    setIndex((i) => (i + step + CATEGORIES.length) % CATEGORIES.length);
+
+  useEffect(() => {
+    if (isWide || paused || reduceMotion) return;
+    const t = setTimeout(() => go(1), 3500);
+    return () => clearTimeout(t);
+  }, [index, isWide, paused, reduceMotion]);
+
+  const link = (label: string, Icon: LucideIcon, active = true) => (
+    <a
+      href="#shop"
+      tabIndex={active ? undefined : -1}
+      className="flex items-center justify-center gap-2.5 whitespace-nowrap font-display text-[13px] font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+    >
+      <Icon className="h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
+      {label}
+    </a>
+  );
+
   return (
     <div className="px-3 pt-3 md:px-5 md:pt-5">
       <nav aria-label="Shop categories" className="rounded-2xl bg-bark text-cream">
-        <ul className="hide-scrollbar flex items-center gap-8 overflow-x-auto px-6 py-4 md:justify-between md:gap-3 md:px-10">
-          {CATEGORIES.map(({ label, Icon }) => (
-            <li key={label}>
-              <a
-                href="#shop"
-                className="flex shrink-0 items-center gap-2.5 font-display text-[12px] font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+        {isWide ? (
+          <ul className="flex items-center justify-between gap-3 px-10 py-4">
+            {CATEGORIES.map(({ label, Icon }) => (
+              <li key={label} className="shrink-0">
+                {link(label, Icon)}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div
+            className="flex items-center gap-2 px-4 py-6"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={() => setPaused(false)}
+          >
+            <button
+              onClick={() => go(-1)}
+              aria-label="Previous category"
+              className="shrink-0 p-1 transition hover:text-brand"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+
+            {/* All six stay in the DOM — only the active one is visible, so the
+                links remain crawlable and the track can slide between them. */}
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <ul
+                className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
+                style={{ transform: `translateX(-${index * 100}%)` }}
               >
-                <Icon className="h-4.5 w-4.5 text-brand" aria-hidden="true" />
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
+                {CATEGORIES.map(({ label, Icon }, i) => (
+                  <li
+                    key={label}
+                    className="w-full shrink-0"
+                    aria-hidden={i !== index || undefined}
+                  >
+                    {link(label, Icon, i === index)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <button
+              onClick={() => go(1)}
+              aria-label="Next category"
+              className="shrink-0 p-1 transition hover:text-brand"
+            >
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
       </nav>
     </div>
   );
