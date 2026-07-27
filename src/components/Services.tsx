@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import svcTraining from "@/assets/service-training.jpg";
 import svcWalking from "@/assets/service-walking.jpg";
@@ -51,6 +52,19 @@ const SERVICES = [
 
 export default function Services() {
   const { openBooking } = useBooking();
+  // Touch devices don't fire :hover on a non-interactive element, so the tapped
+  // card is tracked explicitly. Mouse pointers are left to plain :hover.
+  const [tapped, setTapped] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (tapped === null) return;
+    const clear = (e: PointerEvent) => {
+      if (!gridRef.current?.contains(e.target as Node)) setTapped(null);
+    };
+    document.addEventListener("pointerdown", clear);
+    return () => document.removeEventListener("pointerdown", clear);
+  }, [tapped]);
 
   return (
     <section id="services" className="px-3 py-10 md:px-5 md:py-14">
@@ -82,10 +96,16 @@ export default function Services() {
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+          <div ref={gridRef} className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((service, i) => (
               <Reveal key={service.title} delay={(i % 3) * 100}>
-                <article className="group relative h-full rounded-[1.5rem] bg-cream-deep p-3.5 transition-colors duration-300 hover:bg-brand">
+                <article
+                  onPointerDown={(e) => {
+                    if (e.pointerType !== "mouse") setTapped(i);
+                  }}
+                  data-tapped={tapped === i || undefined}
+                  className="group relative h-full rounded-[1.5rem] bg-cream-deep p-3.5 transition-colors duration-300 hover:bg-brand data-[tapped]:bg-brand"
+                >
                   <div className="overflow-hidden rounded-[1.15rem]">
                     <img
                       src={service.img}
@@ -100,7 +120,7 @@ export default function Services() {
                   <div className="px-2.5 pb-10 pt-6">
                     <h3 className="text-[26px]">{service.title}</h3>
                     <p className="mt-1.5 font-display text-[15px] font-extrabold">{service.price}</p>
-                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-ink">
+                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-ink group-data-[tapped]:text-ink">
                       {service.desc}
                     </p>
                   </div>
@@ -108,7 +128,7 @@ export default function Services() {
                   <button
                     onClick={() => openBooking(service.title)}
                     aria-label={`Book ${service.title.toLowerCase()}`}
-                    className="cut-ring absolute bottom-0 right-0 grid h-14 w-14 place-items-center rounded-full bg-brand text-white transition duration-300 group-hover:bg-white group-hover:text-ink hover:scale-105"
+                    className="cut-ring absolute bottom-0 right-0 grid h-14 w-14 place-items-center rounded-full bg-brand text-white transition duration-300 group-hover:bg-white group-hover:text-ink group-data-[tapped]:bg-white group-data-[tapped]:text-ink hover:scale-105"
                   >
                     <ArrowUpRight className="h-5 w-5" />
                   </button>
