@@ -7,12 +7,20 @@ const DESKTOP_SRC = "/media/kpetz-hero.mp4";
 const MOBILE_SRC = "/media/kpetz-hero-mobile.mp4";
 const DESCRIPTION = "A golden retriever running across a sunlit park towards its owner";
 
+const mq = (query: string) =>
+  typeof window !== "undefined" && window.matchMedia(query).matches;
+
 type Props = { className?: string };
 
 export default function HeroVideo({ className = "" }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [small, setSmall] = useState(false);
+  // Read both synchronously. If `small` started false, mobile would request the
+  // 2.2MB desktop file, then remount and fetch the small one — wasting the whole
+  // download and delaying playback badly on a slow connection.
+  const [small, setSmall] = useState(() => mq("(max-width: 640px)"));
+  const [reduceMotion, setReduceMotion] = useState(() =>
+    mq("(prefers-reduced-motion: reduce)")
+  );
   /** True once the browser has refused to autoplay — we then offer a tap target. */
   const [blocked, setBlocked] = useState(false);
 
@@ -23,7 +31,6 @@ export default function HeroVideo({ className = "" }: Props) {
       setReduceMotion(motion.matches);
       setSmall(width.matches);
     };
-    sync();
     motion.addEventListener("change", sync);
     width.addEventListener("change", sync);
     return () => {
@@ -48,7 +55,7 @@ export default function HeroVideo({ className = "" }: Props) {
 
   const attemptPlay = useCallback(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || video.paused === false) return;
     video.muted = true;
     const started = video.play();
     if (started !== undefined) {
@@ -73,17 +80,43 @@ export default function HeroVideo({ className = "" }: Props) {
     );
 
     observer.observe(video);
-    // Also try as soon as there are frames to show — `canplay` fires later than
-    // mount on a slow connection, which is exactly when the first attempt fails.
-    video.addEventListener("canplay", attemptPlay);
-    video.addEventListener("loadeddata", attemptPlay);
+
+    // `canplay` fires later than mount on a slow connection — exactly when the
+    // first attempt fails — so retry at every point new data becomes available.
+    const ready = ["loadedmetadata", "loadeddata", "canplay", "canplaythrough"];
+    ready.forEach((e) => video.addEventListener(e, attemptPlay));
 
     return () => {
       observer.disconnect();
-      video.removeEventListener("canplay", attemptPlay);
-      video.removeEventListener("loadeddata", attemptPlay);
+      ready.forEach((e) => video.removeEventListener(e, attemptPlay));
     };
   }, [attemptPlay, reduceMotion, small]);
+
+  /**
+   * If the browser refused autoplay, the next thing the visitor does counts as a
+   * user gesture and unlocks playback. Listening for it means the video starts
+   * on their first tap or scroll rather than waiting for them to find a button.
+   */
+  useEffect(() => {
+    if (reduceMotion) return;
+
+    const unlock = () => attemptPlay();
+    const gestures = ["pointerdown", "touchstart", "touchend", "click", "keydown", "scroll"];
+    gestures.forEach((e) =>
+      document.addEventListener(e, unlock, { passive: true, capture: true })
+    );
+
+    // A tab opened in the background can't autoplay; retry once it's shown.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") attemptPlay();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      gestures.forEach((e) => document.removeEventListener(e, unlock, { capture: true }));
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [attemptPlay, reduceMotion]);
 
   if (reduceMotion) {
     return <img src={POSTER} alt={DESCRIPTION} className={className} />;
@@ -111,16 +144,17 @@ export default function HeroVideo({ className = "" }: Props) {
         aria-label={DESCRIPTION}
       />
 
-      {/* Low Power Mode and data-saver modes refuse autoplay outright — no code
-          can override that, so give the visitor a way to start it themselves. */}
+      {/* Low Power Mode and Low Data Mode refuse autoplay outright — no code
+          can override that, so give the visitor a way to start it themselves.
+          Sits high enough to clear the floating Safari/Chrome toolbar. */}
       {blocked && (
         <button
           type="button"
           onClick={attemptPlay}
-          aria-label="Play background video"
-          className="absolute bottom-5 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-brand text-white shadow-lg transition hover:bg-ink"
+          className="btn absolute bottom-28 right-4 z-20 gap-2 bg-brand text-white shadow-lg transition hover:bg-ink sm:bottom-6 sm:right-6"
         >
-          <Play className="h-5 w-5 translate-x-[1px]" fill="currentColor" />
+          <Play className="h-4 w-4" fill="currentColor" aria-hidden="true" />
+          Play video
         </button>
       )}
     </>
