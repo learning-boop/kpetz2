@@ -1,20 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Header } from "./Header";
 import BookingForm from "./BookingForm";
 import { PawMark } from "./decor/Decor";
 import { useBooking } from "./BookingProvider";
-
-/**
- * One continuous video sits behind the whole hero. It's declared outside the
- * slide data on purpose: the copy rotates, the footage doesn't restart.
- */
-const VIDEO = {
-  src: "/media/kpetz-hero.mp4",
-  /** Frame 0, so there's no jump when playback starts, and it's what shows under reduced motion. */
-  poster: "/media/kpetz-hero-poster.jpg",
-  description: "A golden retriever running across a sunlit park towards its owner",
-};
+import HeroVideo from "./HeroVideo";
 
 type Slide = {
   eyebrow: string;
@@ -65,7 +55,6 @@ function usePrefersReducedMotion() {
 export default function Hero() {
   const { openBooking } = useBooking();
   const [index, setIndex] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const slide = SLIDES[index];
   const reduceMotion = usePrefersReducedMotion();
 
@@ -79,11 +68,6 @@ export default function Hero() {
     return () => clearTimeout(t);
   }, [index, reduceMotion]);
 
-  // Safari ignores autoplay unless muted is set on the element itself.
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = true;
-  }, [reduceMotion]);
-
   return (
     <section id="home" className="relative px-3 pb-8 md:px-5 md:pb-12">
       <Header />
@@ -91,23 +75,7 @@ export default function Hero() {
       <div className="relative overflow-hidden rounded-[1.5rem] bg-ink md:rounded-[2rem]">
         {/* Background media */}
         <div className="absolute inset-0">
-          {reduceMotion ? (
-            <img src={VIDEO.poster} alt={VIDEO.description} className="h-full w-full object-cover" />
-          ) : (
-            <video
-              ref={videoRef}
-              className="h-full w-full object-cover"
-              poster={VIDEO.poster}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label={VIDEO.description}
-            >
-              <source src={VIDEO.src} type="video/mp4" />
-            </video>
-          )}
+          <HeroVideo className="h-full w-full object-cover" />
           {/* Scrim: heavy on the left so the headline stays readable over any frame. */}
           <div
             aria-hidden="true"
