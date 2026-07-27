@@ -43,12 +43,12 @@ export function TopBar() {
   const [paused, setPaused] = useState(false);
   // Read synchronously so the desktop row doesn't flash the carousel first.
   const [isWide, setIsWide] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1280px)").matches
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches
   );
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
-    const wide = window.matchMedia("(min-width: 1280px)");
+    const wide = window.matchMedia("(min-width: 1024px)");
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => {
       setIsWide(wide.matches);
@@ -72,25 +72,34 @@ export function TopBar() {
     return () => clearTimeout(t);
   }, [index, isWide, paused, reduceMotion]);
 
-  const link = (label: string, Icon: LucideIcon, active = true) => (
+  const link = (label: string, Icon: LucideIcon, active = true, compact = false) => (
     <a
       href="#shop"
       tabIndex={active ? undefined : -1}
-      className="flex items-center justify-center gap-2.5 whitespace-nowrap font-display text-[13px] font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+      className={
+        compact
+          ? // Desktop row: tightened so all six fit from 1024px up, easing back
+            // out to full size on wider screens.
+            "flex items-center justify-center gap-2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-[0.06em] transition hover:text-brand xl:gap-2.5 xl:text-[12px] xl:tracking-[0.1em] 2xl:text-[13px] 2xl:tracking-[0.14em]"
+          : "flex items-center justify-center gap-2.5 whitespace-nowrap font-display text-[13px] font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+      }
     >
-      <Icon className="h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
+      <Icon
+        className={`shrink-0 text-brand ${compact ? "h-4 w-4 xl:h-4.5 xl:w-4.5" : "h-4.5 w-4.5"}`}
+        aria-hidden="true"
+      />
       {label}
     </a>
   );
 
   return (
-    <div className="px-3 pt-3 md:px-5 md:pt-5">
+    <div className="p-3 md:p-5">
       <nav aria-label="Shop categories" className="rounded-2xl bg-bark text-cream">
         {isWide ? (
-          <ul className="flex items-center justify-between gap-3 px-10 py-4">
+          <ul className="flex items-center justify-between gap-2 px-4 py-4 xl:gap-3 xl:px-8 2xl:px-10">
             {CATEGORIES.map(({ label, Icon }) => (
               <li key={label} className="shrink-0">
-                {link(label, Icon)}
+                {link(label, Icon, true, true)}
               </li>
             ))}
           </ul>
