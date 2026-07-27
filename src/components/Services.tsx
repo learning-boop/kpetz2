@@ -85,7 +85,7 @@ export default function Services() {
           <div className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((service, i) => (
               <Reveal key={service.title} delay={(i % 3) * 100}>
-                <article className="group relative h-full rounded-[1.5rem] bg-cream-deep p-3.5">
+                <article className="group relative h-full rounded-[1.5rem] bg-cream-deep p-3.5 transition-colors duration-300 hover:bg-brand">
                   <div className="overflow-hidden rounded-[1.15rem]">
                     <img
                       src={service.img}
@@ -100,7 +100,7 @@ export default function Services() {
                   <div className="px-2.5 pb-10 pt-6">
                     <h3 className="text-[26px]">{service.title}</h3>
                     <p className="mt-1.5 font-display text-[15px] font-extrabold">{service.price}</p>
-                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft">
+                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-ink">
                       {service.desc}
                     </p>
                   </div>
@@ -108,7 +108,7 @@ export default function Services() {
                   <button
                     onClick={() => openBooking(service.title)}
                     aria-label={`Book ${service.title.toLowerCase()}`}
-                    className="cut-ring absolute bottom-0 right-0 grid h-14 w-14 place-items-center rounded-full bg-brand text-white transition hover:bg-ink"
+                    className="cut-ring absolute bottom-0 right-0 grid h-14 w-14 place-items-center rounded-full bg-brand text-white transition duration-300 group-hover:bg-white group-hover:text-ink hover:scale-105"
                   >
                     <ArrowUpRight className="h-5 w-5" />
                   </button>
