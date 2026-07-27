@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play } from "lucide-react";
 
 const POSTER = "/media/kpetz-hero-poster.jpg";
 const DESKTOP_SRC = "/media/kpetz-hero.mp4";
@@ -21,8 +20,6 @@ export default function HeroVideo({ className = "" }: Props) {
   const [reduceMotion, setReduceMotion] = useState(() =>
     mq("(prefers-reduced-motion: reduce)")
   );
-  /** True once the browser has refused to autoplay — we then offer a tap target. */
-  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -57,10 +54,9 @@ export default function HeroVideo({ className = "" }: Props) {
     const video = videoRef.current;
     if (!video || video.paused === false) return;
     video.muted = true;
-    const started = video.play();
-    if (started !== undefined) {
-      started.then(() => setBlocked(false)).catch(() => setBlocked(true));
-    }
+    // A rejection just means the OS refused for now (Low Power Mode, Low Data
+    // Mode, no gesture yet). Swallow it — the listeners below will retry.
+    video.play()?.catch(() => {});
   }, []);
 
   /**
@@ -123,40 +119,24 @@ export default function HeroVideo({ className = "" }: Props) {
   }
 
   return (
-    <>
-      <video
-        // Re-mounts if the breakpoint changes, so the right file is fetched.
-        key={small ? "mobile" : "desktop"}
-        ref={attachVideo}
-        className={className}
-        poster={POSTER}
-        src={small ? MOBILE_SRC : DESKTOP_SRC}
-        autoPlay
-        muted
-        loop
-        playsInline
-        // iOS reads the lowercase attribute; React's camelCase prop covers most
-        // browsers, but older WebKit needs this spelling too.
-        // eslint-disable-next-line react/no-unknown-property
-        webkit-playsinline="true"
-        preload="auto"
-        disablePictureInPicture
-        aria-label={DESCRIPTION}
-      />
-
-      {/* Low Power Mode and Low Data Mode refuse autoplay outright — no code
-          can override that, so give the visitor a way to start it themselves.
-          Sits high enough to clear the floating Safari/Chrome toolbar. */}
-      {blocked && (
-        <button
-          type="button"
-          onClick={attemptPlay}
-          className="btn absolute bottom-28 right-4 z-20 gap-2 bg-brand text-white shadow-lg transition hover:bg-ink sm:bottom-6 sm:right-6"
-        >
-          <Play className="h-4 w-4" fill="currentColor" aria-hidden="true" />
-          Play video
-        </button>
-      )}
-    </>
+    <video
+      // Re-mounts if the breakpoint changes, so the right file is fetched.
+      key={small ? "mobile" : "desktop"}
+      ref={attachVideo}
+      className={className}
+      poster={POSTER}
+      src={small ? MOBILE_SRC : DESKTOP_SRC}
+      autoPlay
+      muted
+      loop
+      playsInline
+      // iOS reads the lowercase attribute; React's camelCase prop covers most
+      // browsers, but older WebKit needs this spelling too.
+      // eslint-disable-next-line react/no-unknown-property
+      webkit-playsinline="true"
+      preload="auto"
+      disablePictureInPicture
+      aria-label={DESCRIPTION}
+    />
   );
 }
