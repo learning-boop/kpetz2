@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PawMark } from "./decor/Decor";
+import Logo from "./Logo";
 import { useBooking } from "./BookingProvider";
 
 const NAV = [
@@ -180,11 +181,12 @@ export function Header() {
       <div className="px-3 md:px-5">
         <div className="container-x flex items-center justify-between gap-3 py-4 sm:gap-6 lg:py-6">
           <a href="#home" className="flex shrink-0 items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand sm:h-11 sm:w-11">
-              <PawMark className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-            </span>
-            <span className="font-display text-[22px] font-black tracking-tight sm:text-[28px]">
-              Kpetz
+            <Logo className="h-10 w-10 shrink-0 sm:h-12 sm:w-12" />
+            <span className="font-display text-[20px] font-black leading-none tracking-tight sm:text-[24px]">
+              K-Petz
+              <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] opacity-70 sm:text-[10px]">
+                Hospital
+              </span>
             </span>
           </a>
 

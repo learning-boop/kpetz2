@@ -1,5 +1,6 @@
 import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
 import { PawMark } from "./decor/Decor";
+import Logo from "./Logo";
 
 const SHOP = ["Dog food", "Cat food", "Bird supplies", "Collars & leads", "Toys", "Grooming kits"];
 const COMPANY = ["About us", "Our services", "Adoption", "Gift cards", "Store locator", "Careers"];
@@ -12,10 +13,13 @@ export default function Footer() {
       <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <a href="#home" className="flex items-center gap-2.5">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-brand">
-              <PawMark className="h-5 w-5 text-white" />
+            <Logo className="h-12 w-12 shrink-0" />
+            <span className="font-display text-[24px] font-black leading-none tracking-tight">
+              K-Petz
+              <span className="block text-[10px] font-extrabold uppercase tracking-[0.22em] opacity-70">
+                Hospital
+              </span>
             </span>
-            <span className="font-display text-[28px] font-black tracking-tight">Kpetz</span>
           </a>
           <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-cream/70">
             A pet store run by trainers and vets. Premium supplies, honest advice and care that
@@ -40,13 +44,13 @@ export default function Footer() {
         </div>
 
         <nav aria-label="Shop">
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
             Shop
           </h2>
           <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
             {SHOP.map((item) => (
               <li key={item}>
-                <a href="#shop" className="transition hover:text-brand">
+                <a href="#shop" className="transition hover:text-gold">
                   {item}
                 </a>
               </li>
@@ -55,13 +59,13 @@ export default function Footer() {
         </nav>
 
         <nav aria-label="Company">
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
             Company
           </h2>
           <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
             {COMPANY.map((item) => (
               <li key={item}>
-                <a href="#about" className="transition hover:text-brand">
+                <a href="#about" className="transition hover:text-gold">
                   {item}
                 </a>
               </li>
@@ -70,24 +74,30 @@ export default function Footer() {
         </nav>
 
         <div>
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-brand">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
             Get in touch
           </h2>
           <ul className="mt-5 grid gap-4 text-[15px] text-cream/75">
             <li className="flex gap-3">
-              <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
-              MG Road, Labbipet, Vijayawada 520010
+              <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
+              Near Saibaba Temple, Srinivasa Nagar, Poranki, Vijayawada
             </li>
             <li className="flex gap-3">
-              <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
-              <a href="tel:+919876543210" className="hover:text-brand">
-                +91 98765 43210
-              </a>
+              <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
+              <span>
+                <a href="tel:+918019888877" className="hover:text-gold">
+                  80198 88877
+                </a>
+                <br />
+                <a href="tel:+918185048877" className="hover:text-gold">
+                  81850 48877
+                </a>
+              </span>
             </li>
             <li className="flex gap-3">
-              <Mail className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand" aria-hidden="true" />
-              <a href="mailto:hello@kpetz.com" className="hover:text-brand">
-                hello@kpetz.com
+              <Mail className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
+              <a href="mailto:kpetzhospital@gmail.com" className="break-all hover:text-gold">
+                kpetzhospital@gmail.com
               </a>
             </li>
           </ul>
@@ -112,15 +122,15 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-xs font-semibold text-cream/55 sm:flex-row">
-          <p>© {new Date().getFullYear()} Kpetz. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} K-Petz Hospital. All rights reserved.</p>
           <p className="flex gap-5">
-            <a href="#contact" className="hover:text-brand">
+            <a href="#contact" className="hover:text-gold">
               Privacy
             </a>
-            <a href="#contact" className="hover:text-brand">
+            <a href="#contact" className="hover:text-gold">
               Terms
             </a>
-            <a href="#contact" className="hover:text-brand">
+            <a href="#contact" className="hover:text-gold">
               Shipping
             </a>
           </p>

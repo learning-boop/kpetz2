@@ -10,6 +10,7 @@
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-bark: var(--bark);
+  --color-gold: var(--gold);
   --color-line: var(--line);
 
   --color-background: var(--cream);
@@ -25,15 +26,19 @@
 }
 
 :root {
-  --cream: #faf3ea;
-  --cream-deep: #f2e7d7;
-  --sand: #e9dcc6;
-  --ink: #2a2724;
-  --ink-soft: #6d645b;
-  --brand: #ef7b22;
-  --brand-deep: #d2661a;
-  --bark: #463933;
-  --line: #e3d7c4;
+  /* Palette taken from the K-Petz Hospital pamphlet: cornflower blue field,
+     deep purple logo arc, gold highlights. Sampled from the artwork and
+     white-balanced, since the photo was shot under warm light. */
+  --cream: #f5f6fa;
+  --cream-deep: #e9edf7;
+  --sand: #d4dcf0;
+  --ink: #241c3a;
+  --ink-soft: #575070;
+  --brand: #4a63a8;
+  --brand-deep: #3a4e86;
+  --bark: #3b2c5e;
+  --gold: #f2c230;
+  --line: #dbe1f0;
 }
 
 @layer base {
