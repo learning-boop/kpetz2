@@ -68,7 +68,7 @@ export default function About() {
             </dl>
 
             <div className="mt-10">
-              <Signature name="Kenneth" className="ml-1" />
+              <Signature name="krishna" className="ml-1" />
               <p className="mt-3 font-display text-[15px] font-extrabold">
                 krishna <span className="font-bold text-brand">(Co-founder)</span>
               </p>

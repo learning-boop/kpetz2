@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import svcTraining from "@/assets/service-training.jpg";
-import svcWalking from "@/assets/service-walking.jpg";
-import svcBoarding from "@/assets/service-boarding.jpg";
-import svcBird from "@/assets/service-bird.jpg";
-import svcAdoption from "@/assets/service-adoption.jpg";
-import svcSupplies from "@/assets/service-supplies.jpg";
+import svcDeworming from "@/assets/svc-deworming.webp";
+import svcVaccination from "@/assets/svc-vaccination.webp";
+import svcHaircut from "@/assets/svc-haircut.webp";
+import svcBathing from "@/assets/svc-bathing.webp";
 import dogLying from "@/assets/dog-lying.webp";
 import { BoneMark, PawField, Sparkle } from "./decor/Decor";
 import Reveal from "./Reveal";
@@ -13,40 +11,32 @@ import { useBooking } from "./BookingProvider";
 
 const SERVICES = [
   {
-    img: svcTraining,
-    title: "Pet coaching",
-    price: "₹1,499 / month",
-    desc: "Reward-based training that builds a calm, confident dog — four sessions a month.",
+    img: svcDeworming,
+    title: "Home deworming",
+    where: "At your home",
+    desc: "A vet comes to you for routine deworming — no car journey, no waiting room.",
+    alt: "A veterinarian giving deworming medication to a labrador at home while its owners watch",
   },
   {
-    img: svcWalking,
-    title: "Active paws",
-    price: "₹2,299 / month",
-    desc: "Daily 45-minute walks with a handler your dog meets before day one.",
+    img: svcVaccination,
+    title: "Vaccinations",
+    where: "At the clinic",
+    desc: "Core vaccinations and boosters, given by a qualified veterinarian.",
+    alt: "A veterinarian vaccinating a golden retriever puppy on a clinic table",
   },
   {
-    img: svcBoarding,
-    title: "Comfy crates",
-    price: "₹2,199 / month",
-    desc: "Supervised overnight boarding with photo updates twice a day.",
+    img: svcHaircut,
+    title: "Pet hair cut",
+    where: "At the clinic",
+    desc: "Breed-appropriate trimming and styling, done at your pet's own pace.",
+    alt: "A shih tzu being trimmed with scissors on a grooming table",
   },
   {
-    img: svcBird,
-    title: "Bird practice",
-    price: "₹2,099 / month",
-    desc: "Enrichment, flight time and gentle handling built for parrots and budgies.",
-  },
-  {
-    img: svcAdoption,
-    title: "Adoption journey",
-    price: "Free",
-    desc: "We match rescues to homes, then check in for the first six months.",
-  },
-  {
-    img: svcSupplies,
-    title: "Supply subscription",
-    price: "₹3,299 / month",
-    desc: "Food, litter and treats delivered on the schedule your pet actually eats to.",
+    img: svcBathing,
+    title: "Bathing",
+    where: "At the clinic",
+    desc: "A warm bath, blow-dry and brush-out using skin-friendly shampoo.",
+    alt: "A small white dog being lathered with shampoo in a grooming bath",
   },
 ];
 
@@ -88,7 +78,7 @@ export default function Services() {
 
         <div className="container-x relative">
           <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">Kpetz care</p>
+            <p className="eyebrow text-gold">K-Petz care</p>
             <h2 className="display-lg mt-5 text-white">Excellence In Every Service</h2>
             <p className="mt-5 text-[17px] leading-relaxed text-cream/75">
               Coaching a new puppy or grooming a spirited parrot — the same team handles both, and
@@ -96,9 +86,9 @@ export default function Services() {
             </p>
           </Reveal>
 
-          <div ref={gridRef} className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+          <div ref={gridRef} className="mt-14 grid gap-7 sm:grid-cols-2 xl:grid-cols-4">
             {SERVICES.map((service, i) => (
-              <Reveal key={service.title} delay={(i % 3) * 100}>
+              <Reveal key={service.title} delay={(i % 4) * 90}>
                 <article
                   onPointerDown={(e) => {
                     if (e.pointerType !== "mouse") setTapped(i);
@@ -109,18 +99,22 @@ export default function Services() {
                   <div className="overflow-hidden rounded-[1.15rem]">
                     <img
                       src={service.img}
-                      alt={service.title}
+                      alt={service.alt}
                       width={900}
-                      height={700}
+                      height={675}
                       loading="lazy"
-                      className="h-48 w-full object-cover transition duration-700 group-hover:scale-105"
+                      className="aspect-[4/3] w-full object-cover transition duration-700 group-hover:scale-105"
                     />
                   </div>
 
                   <div className="px-2.5 pb-10 pt-6">
-                    <h3 className="text-[26px]">{service.title}</h3>
-                    <p className="mt-1.5 font-display text-[15px] font-extrabold">{service.price}</p>
-                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-ink group-data-[tapped]:text-ink">
+                    <h3 className="text-[26px] transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
+                      {service.title}
+                    </h3>
+                    <p className="mt-1.5 font-display text-[15px] font-extrabold transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
+                      {service.where}
+                    </p>
+                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
                       {service.desc}
                     </p>
                   </div>
@@ -140,4 +134,4 @@ export default function Services() {
       </div>
     </section>
   );
-} 
+}

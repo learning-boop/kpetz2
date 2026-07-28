@@ -3,13 +3,13 @@ import dachshund from "@/assets/dachshund.webp";
 
 const PET_TYPES = ["Dog", "Cat", "Bird", "Small mammal"];
 const SERVICES = [
-  "Pet grooming",
-  "Pet boarding",
-  "Pet daycare",
-  "Veterinary check-up",
-  "Training programme",
-  "Adoption enquiry",
-];
+  "Home deworming",
+  "Vaccinations",
+  "Pet hair cut",
+  "Bathing",
+  "Veterinary consultation",
+  "Other enquiry",
+]
 
 const LABEL =
   "mb-1.5 block font-display text-[11px] font-extrabold uppercase tracking-[0.14em] text-white";
