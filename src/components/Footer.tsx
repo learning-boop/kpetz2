@@ -3,7 +3,7 @@ import { PawMark } from "./decor/Decor";
 import Logo from "./Logo";
 
 const SHOP = ["Dog food", "Cat food", "Bird supplies", "Collars & leads", "Toys", "Grooming kits"];
-const COMPANY = ["About us", "Our services", "Adoption", "Gift cards", "Store locator", "Careers"];
+const COMPANY = ["About us", "Our services"];
 
 export default function Footer() {
   return (
@@ -17,14 +17,11 @@ export default function Footer() {
             <span className="font-display text-[24px] font-black leading-none tracking-tight">
               K-Petz
               <span className="block text-[10px] font-extrabold uppercase tracking-[0.22em] opacity-70">
-                Hospital
+                Hospital Online
               </span>
             </span>
           </a>
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-cream/70">
-            A pet store run by trainers and vets. Premium supplies, honest advice and care that
-            treats your animal like our own.
-          </p>
+          
           <div className="mt-6 flex gap-3">
             {[
               { Icon: Instagram, label: "Instagram" },
@@ -43,20 +40,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <nav aria-label="Shop">
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-            Shop
-          </h2>
-          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
-            {SHOP.map((item) => (
-              <li key={item}>
-                <a href="#shop" className="transition hover:text-gold">
-                  {item}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        
 
         <nav aria-label="Company">
           <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
