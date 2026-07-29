@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <a href="#home" className="flex items-center gap-2.5">
-            <Logo className="h-12 w-12 shrink-0" />
+            <Logo className="h-14 w-14 shrink-0" />
             <span className="font-display text-[24px] font-black leading-none tracking-tight">
               K-Petz
               <span className="block text-[10px] font-extrabold uppercase tracking-[0.22em] opacity-70">

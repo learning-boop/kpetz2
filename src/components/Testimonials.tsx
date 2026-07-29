@@ -1,59 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Quote, Star } from "lucide-react";
-import petDog from "@/assets/hero-dog.jpg";
-import petBoarding from "@/assets/service-boarding.jpg";
-import petCat from "@/assets/hero-cat.jpg";
-import petBird from "@/assets/hero-bird.jpg";
-import petPuppy from "@/assets/service-adoption.jpg";
-import petTraining from "@/assets/service-training.jpg";
+import { ArrowLeft, ArrowRight, ExternalLink, Quote, Star } from "lucide-react";
 import Reveal from "./Reveal";
 
+const SOURCE = {
+  score: "4.8",
+  count: 268,
+  name: "Justdial",
+  url: "https://www.justdial.com/Vijayawada/K-Petz-Hospital-Behind-Street-Of-Saibaba-Temple-Srinivas-Nagar-Poranki/0866PX866-X866-210419141330-V2L3_BZDET/reviews",
+};
+
+/**
+ * Real reviews left by customers on Justdial, reproduced with the reviewer's
+ * name and a link back to the source. Dates omitted at the client's request.
+ * Only clear spelling slips have been corrected — see the note in the handover.
+ */
 const REVIEWS = [
   {
+    name: "Ch V Prasad",
     quote:
-      "Our rescue was terrified of strangers. Six weeks with the coaching team and she now greets the postman. Worth every rupee.",
-    name: "Anjali Reddy",
-    role: "Beagle mum, Benz Circle",
-    photo: petDog,
+      "Our dog Tommy was diagnosed with Parvovirus, and we were extremely worried. The doctors and staff at K-Petz Hospital gave him excellent treatment with great care, patience, and dedication. Because of their timely diagnosis and proper treatment, Tommy has now completely recovered.",
   },
   {
+    name: "Sunitha",
     quote:
-      "The boarding photos twice a day meant I actually enjoyed my holiday. He came home tired and happy, not stressed.",
-    name: "Vikram Nair",
-    role: "Labrador dad, Gunadala",
-    photo: petBoarding,
+      "I had a mixed Pomeranian dog operated for birth control. Dr Radhika ma'am did a great job and took good care of the dog. I would recommend K-Petz to anyone who wants good medical care for their dog and good medical advice.",
   },
   {
+    name: "Anupama",
     quote:
-      "They talked me out of a more expensive food and explained exactly why. That's when I knew I'd keep coming back.",
-    name: "Sneha Patel",
-    role: "Persian cat parent, Patamata",
-    photo: petCat,
+      "Here we found not only treatment, love and personal attachment with my buddy. Excellent treatment, doctors are highly experienced and very friendly to us and pet as well. 100% recommending who need pet hospital.",
   },
   {
+    name: "Anoop",
     quote:
-      "Nobody else in the city would look at a budgie. They knew exactly what her feathers needed and she's twice as chirpy.",
-    name: "Ravi Teja",
-    role: "Budgie keeper, Governorpet",
-    photo: petBird,
+      "Doctors were so cool in explaining and managing my pet's health condition. Definitely a one stop solution for all your pet's care.",
   },
   {
-    quote:
-      "We adopted through them and they still check in six months later. It never felt like a transaction.",
-    name: "Meera Krishnan",
-    role: "Adopted Simba, Bhavanipuram",
-    photo: petPuppy,
-  },
-  {
-    quote:
-      "The trainer met our puppy before the first session and remembered every detail. Small thing, big difference.",
-    name: "Arjun Varma",
-    role: "Indie dog dad, Auto Nagar",
-    photo: petTraining,
+    name: "Adusumilli Teja",
+    quote: "Best pet clinic with talented doctors and equipment.",
   },
 ];
 
-const ADVANCE_MS = 4500;
+const ADVANCE_MS = 6000;
 
 export default function Testimonials() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -73,16 +61,12 @@ export default function Testimonials() {
     (i: number) => {
       const track = trackRef.current;
       if (!track) return;
-      const next = (i + REVIEWS.length) % REVIEWS.length;
-      const card = track.children[next] as HTMLElement | undefined;
-      if (!card) return;
-      track.scrollTo({ left: card.offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
+      const card = track.children[(i + REVIEWS.length) % REVIEWS.length] as HTMLElement | undefined;
+      if (card) track.scrollTo({ left: card.offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
     },
     [reduceMotion]
   );
 
-  // Keep the dots in step with wherever the track actually is, so dragging,
-  // swiping and the arrows all report the same position.
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
@@ -90,23 +74,20 @@ export default function Testimonials() {
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const maxScroll = track.scrollWidth - track.clientWidth;
-        // The trailing cards can never reach the left edge, so the raw "nearest
-        // card" reading stalls a few short of the end. Treat hitting the limit
-        // as being on the last review, otherwise autoplay never wraps.
-        if (maxScroll - track.scrollLeft < 2) {
+        if (track.scrollWidth - track.clientWidth - track.scrollLeft < 2) {
           setIndex(REVIEWS.length - 1);
           return;
         }
         const cards = Array.from(track.children) as HTMLElement[];
-        const nearest = cards.reduce(
-          (best, card, i) =>
-            Math.abs(card.offsetLeft - track.scrollLeft) < best.d
-              ? { i, d: Math.abs(card.offsetLeft - track.scrollLeft) }
-              : best,
-          { i: 0, d: Infinity }
+        setIndex(
+          cards.reduce(
+            (best, c, i) =>
+              Math.abs(c.offsetLeft - track.scrollLeft) < best.d
+                ? { i, d: Math.abs(c.offsetLeft - track.scrollLeft) }
+                : best,
+            { i: 0, d: Infinity }
+          ).i
         );
-        setIndex(nearest.i);
       });
     };
     track.addEventListener("scroll", onScroll, { passive: true });
@@ -129,7 +110,19 @@ export default function Testimonials() {
           <div className="max-w-xl">
             <p className="eyebrow">Kind words</p>
             <h2 className="display-lg mt-5">Loved By Local Pet Parents</h2>
+            <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] font-semibold text-ink-soft">
+              <span className="flex gap-0.5 text-gold" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </span>
+              <span>
+                <strong className="text-ink">{SOURCE.score}</strong> from {SOURCE.count} ratings on{" "}
+                {SOURCE.name}
+              </span>
+            </p>
           </div>
+
           <div className="flex gap-2">
             <button
               onClick={() => scrollTo(index - 1)}
@@ -166,33 +159,29 @@ export default function Testimonials() {
                 key={review.name}
                 aria-roledescription="slide"
                 aria-label={`Review ${i + 1} of ${REVIEWS.length}`}
-                className="snap-start rounded-[1.75rem] bg-white p-8 shadow-[0_20px_50px_-40px_rgba(42,39,36,0.7)]"
+                className="flex snap-start flex-col rounded-[1.75rem] bg-white p-8 shadow-[0_20px_50px_-40px_rgba(36,28,58,0.7)]"
               >
-                <Quote className="h-8 w-8 text-brand" aria-hidden="true" />
-                <blockquote className="mt-4 text-[15px] leading-relaxed text-ink-soft">
+                <Quote className="h-8 w-8 shrink-0 text-brand" aria-hidden="true" />
+                <blockquote className="mt-4 grow text-[15px] leading-relaxed text-ink-soft">
                   {review.quote}
                 </blockquote>
-                <div
-                  className="mt-5 flex items-center gap-0.5 text-brand"
-                  aria-label="Rated 5 out of 5"
-                >
+                <div className="mt-5 flex items-center gap-0.5 text-gold" aria-label="Rated 5 out of 5">
                   {Array.from({ length: 5 }).map((_, s) => (
                     <Star key={s} className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                   ))}
                 </div>
                 <figcaption className="mt-6 flex items-center gap-4 border-t border-line pt-6">
-                  <img
-                    src={review.photo}
-                    alt=""
-                    width={112}
-                    height={112}
-                    loading="lazy"
-                    className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-brand/30 ring-offset-2 ring-offset-white"
-                  />
+                  {/* An initial, not a photo — we have no likeness rights to these people. */}
+                  <span
+                    aria-hidden="true"
+                    className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand font-display text-lg font-black text-white"
+                  >
+                    {review.name.charAt(0)}
+                  </span>
                   <div className="min-w-0">
                     <p className="font-display text-base font-extrabold">{review.name}</p>
-                    <p className="mt-0.5 truncate text-sm font-semibold text-ink-soft">
-                      {review.role}
+                    <p className="mt-0.5 text-sm font-semibold text-ink-soft">
+                      Verified on {SOURCE.name}
                     </p>
                   </div>
                 </figcaption>
@@ -200,18 +189,29 @@ export default function Testimonials() {
             ))}
           </div>
 
-          <div className="mt-8 flex justify-center gap-2">
-            {REVIEWS.map((review, i) => (
-              <button
-                key={review.name}
-                onClick={() => scrollTo(i)}
-                aria-label={`Go to review ${i + 1}`}
-                aria-current={i === index}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-10 bg-brand" : "w-4 bg-ink/20 hover:bg-ink/40"
-                }`}
-              />
-            ))}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+            <div className="flex gap-2">
+              {REVIEWS.map((review, i) => (
+                <button
+                  key={review.name}
+                  onClick={() => scrollTo(i)}
+                  aria-label={`Go to review ${i + 1}`}
+                  aria-current={i === index}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === index ? "w-10 bg-brand" : "w-4 bg-ink/20 hover:bg-ink/40"
+                  }`}
+                />
+              ))}
+            </div>
+            <a
+              href={SOURCE.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-display text-xs font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+            >
+              Read all on {SOURCE.name}
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
           </div>
         </div>
       </div>

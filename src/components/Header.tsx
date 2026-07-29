@@ -181,7 +181,7 @@ export function Header() {
       <div className="px-3 md:px-5">
         <div className="container-x flex items-center justify-between gap-3 py-4 sm:gap-6 lg:py-6">
           <a href="#home" className="flex shrink-0 items-center gap-2">
-            <Logo className="h-10 w-10 shrink-0 sm:h-12 sm:w-12" />
+            <Logo className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
             <span className="font-display text-[20px] font-black leading-none tracking-tight sm:text-[24px]">
               K-Petz
               <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] opacity-70 sm:text-[10px]">
