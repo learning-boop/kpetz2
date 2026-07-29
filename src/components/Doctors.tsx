@@ -7,8 +7,8 @@ import { useBooking } from "./BookingProvider";
 
 const DOCTORS = [
   {
-    name: "Dr Sruthi Vemuri",
-    role: "Lead veterinarian",
+    name: "Dr P.Radhika",
+    role: "M.V.Sc Medicine",
     bio: "Small-animal medicine and preventive care. She runs the first-year puppy and kitten programme, and most of our vaccination schedules are hers.",
     credentials: ["BVSc & AH", "Small animal medicine"],
     photo: drPrimary,
@@ -17,8 +17,8 @@ const DOCTORS = [
     days: "Mon–Thu, 10am–6pm",
   },
   {
-    name: "Dr Imran Sheikh",
-    role: "Surgery & dentistry",
+    name: "Dr K.F.S. Sreekanth",
+    role: "M.V.Sc Medicine",
     bio: "Soft-tissue surgery, dental work and the difficult cases other clinics pass on. He also handles our rescue intake assessments.",
     credentials: ["MVSc Surgery", "Dental care"],
     photo: drSecondary,
