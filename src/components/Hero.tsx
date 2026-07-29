@@ -1,67 +1,19 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Header } from "./Header";
-import BookingForm from "./BookingForm";
-import { PawMark } from "./decor/Decor";
 import { useBooking } from "./BookingProvider";
 import HeroVideo from "./HeroVideo";
 
-type Slide = {
-  title: [string, string];
-  body: string;
-};
-
 /**
- * Kept deliberately short. Only the headline and one line move; the service
- * list and the buttons below stay put, so far less of the hero is in motion.
+ * Content set by the client's brief. Static on purpose — there is no carousel
+ * here, so nothing moves while someone is reading it.
  */
-const SLIDES: Slide[] = [
-  {
-    title: ["Vaccination", "For Your Pet"],
-    body: "Protect your dog or cat from illness.",
-  },
-  {
-    title: ["Deworming", "At Your Home"],
-    body: "Our vet comes to you. No travel needed.",
-  },
-  {
-    title: ["We Love, Care,", "Treat Your Pets"],
-    body: "X-ray, scanning and lab tests in Vijayawada.",
-  },
+const ONLINE_SERVICES = [
+  "Home deworming and vaccination",
+  "Online consultancy for first aid",
+  "Second opinion",
 ];
-
-/** Always on screen, so visitors see the full offer whichever slide is showing. */
-const SERVICES = ["Vaccination", "Home deworming", "Pet grooming"];
-
-const SLIDE_HOLD = 9000;
-
-function usePrefersReducedMotion() {
-  const [reduce, setReduce] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduce(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  return reduce;
-}
 
 export default function Hero() {
   const { openBooking } = useBooking();
-  const [index, setIndex] = useState(0);
-  const slide = SLIDES[index];
-  const reduceMotion = usePrefersReducedMotion();
-
-  const go = (step: number) => setIndex((i) => (i + step + SLIDES.length) % SLIDES.length);
-
-  // Re-armed per slide, so manual navigation restarts the clock
-  // instead of cutting the slide you just picked short.
-  useEffect(() => {
-    if (reduceMotion) return;
-    const t = setTimeout(() => setIndex((i) => (i + 1) % SLIDES.length), SLIDE_HOLD);
-    return () => clearTimeout(t);
-  }, [index, reduceMotion]);
 
   return (
     <section id="home" className="relative px-3 pb-8 md:px-5 md:pb-12">
@@ -74,75 +26,48 @@ export default function Hero() {
           {/* Scrim: heavy on the left so the headline stays readable over any frame. */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-ink/80 via-ink/60 to-ink/80 lg:bg-gradient-to-r lg:from-ink/90 lg:via-ink/65 lg:to-ink/25"
+            className="absolute inset-0 bg-gradient-to-b from-ink/85 via-ink/65 to-ink/85 lg:bg-gradient-to-r lg:from-ink/90 lg:via-ink/70 lg:to-ink/30"
           />
         </div>
 
         {/* Content */}
         <div className="container-x relative pt-32 pb-16 md:pt-36 md:pb-20 lg:pt-48 lg:pb-28">
-          <div className="max-w-xl text-cream">
-            <p className="eyebrow text-gold">K-Petz Hospital</p>
+          <div className="max-w-2xl text-cream">
+            <p className="eyebrow text-white">K-Petz Hospital</p>
 
-            <div key={index} className="hero-fade">
-              <h1 className="display-xl mt-5 text-white">
-                {slide.title[0]} <span className="lg:block">{slide.title[1]}</span>
-              </h1>
-              <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-cream/85">
-                {slide.body}
-              </p>
-            </div>
+            <h1 className="display-xl mt-5 text-gold">
+             We love, care <span className="lg:block"> treat your pets</span>
+            </h1>
 
-            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 font-display text-[13px] font-extrabold uppercase tracking-[0.1em]">
-              {SERVICES.map((name) => (
-                <li key={name} className="flex items-center gap-2">
-                  <PawMark className="h-4 w-4 text-gold" />
-                  {name}
+            {/* <p className="mt-6 font-display text-[20px] font-extrabold leading-snug text-gold md:text-[24px]">
+              We love, care, treat your pets
+            </p> */}
+
+            <ol className="mt-9 grid gap-4">
+              {ONLINE_SERVICES.map((service, i) => (
+                <li key={service} className="flex items-center gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand font-display text-[15px] font-black text-white"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="font-display text-[17px] font-extrabold leading-tight text-white md:text-[19px]">
+                    {service}
+                  </span>
                 </li>
               ))}
-            </ul>
+            </ol>
 
-            <div className="mt-9 flex flex-wrap items-center gap-4">
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <button onClick={() => openBooking()} className="btn btn-primary">
                 Book appointment
               </button>
               <a href="#services" className="btn bg-cream text-ink hover:bg-brand hover:text-white">
                 Our services
               </a>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => go(-1)}
-                  aria-label="Previous slide"
-                  className="grid h-12 w-12 place-items-center rounded-full bg-brand text-white transition hover:bg-cream hover:text-ink"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => go(1)}
-                  aria-label="Next slide"
-                  className="grid h-12 w-12 place-items-center rounded-full bg-brand text-white transition hover:bg-cream hover:text-ink"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-8 flex gap-2" role="tablist" aria-label="Choose slide">
-              {SLIDES.map((s, i) => (
-                <button
-                  key={s.title[0]}
-                  role="tab"
-                  aria-selected={i === index}
-                  aria-label={`Slide ${i + 1}`}
-                  onClick={() => setIndex(i)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === index ? "w-10 bg-brand" : "w-4 bg-cream/30 hover:bg-cream/60"
-                  }`}
-                />
-              ))}
             </div>
           </div>
-
-          
         </div>
       </div>
     </section>

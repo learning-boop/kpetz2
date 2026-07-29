@@ -1,13 +1,18 @@
 import aboutImg from "@/assets/about.jpg";
 import walkImg from "@/assets/dog1.png";
-import { BadgeStamp, BoneMark, PawMark, PlayButton, Signature } from "./decor/Decor";
 import dachshund from "@/assets/dachshund.webp";
+import { BadgeStamp, BoneMark, PawMark, PlayButton, Signature } from "./decor/Decor";
 import Reveal from "./Reveal";
 
+/**
+ * Every figure here is verifiable: the rating and review count come from the
+ * clinic's Justdial listing, and the two locations are the Poranki hospital and
+ * the Gunadala branch opposite APGenco.
+ */
 const STATS = [
-  { value: "120+", label: "Essentials" },
-  { value: "10+", label: "Qualified trainers" },
-  { value: "20k", label: "Grateful clients" },
+  { value: "4.8", label: "Rating" },
+  { value: "268", label: "Customer ratings" },
+  { value: "2", label: "Vijayawada locations" },
 ];
 
 export default function About() {
@@ -20,8 +25,8 @@ export default function About() {
         {/* Heading */}
         <Reveal className="lg:col-start-1 lg:col-end-9 lg:row-start-1">
           <p className="eyebrow">Know us</p>
-          <h2 className="display-lg mt-5 max-w-[14ch]">
-            Making Happy Pet Moments And Accepting Love Every Day
+          <h2 className="display-lg mt-5 max-w-[15ch]">
+            We Love, Care, Treat Your Pets
           </h2>
         </Reveal>
 
@@ -31,7 +36,7 @@ export default function About() {
             <BadgeStamp className="absolute left-0 top-0 z-10 h-24 w-24 md:h-28 md:w-28" />
             <img
               src={aboutImg}
-              alt="Pet parent holding her golden retriever"
+              alt="A pet owner holding her dog"
               width={1200}
               height={1400}
               loading="lazy"
@@ -41,16 +46,17 @@ export default function About() {
 
           <Reveal delay={120} className="relative">
             <p className="font-display text-[22px] font-extrabold leading-snug text-brand md:text-[26px]">
-              “Treasure pet moments with unending love, joy and gentle handling.”
+              “A full pet hospital in Vijayawada — not just a clinic.”
             </p>
             <p className="lede mt-5">
-              Choosing a cat, a dog or a bird is a personal decision — and any of them can become a
-              wonderful companion. We help you get the first year right.
+              K-Petz Hospital has X-ray, ultrasound scanning, an operation theatre and its own lab,
+              so most cases can be diagnosed and treated in one visit instead of being sent
+              elsewhere.
             </p>
             <p className="lede mt-4">
-              Everything on our shelves is chosen by trainers and vets who use it themselves, from
-              grain-gentle food to harnesses that actually fit. If it wouldn't work for our own pets,
-              we don't stock it.
+              Two M.V.Sc qualified veterinarians look after dogs, cats and small pets, from routine
+              vaccination and deworming through to surgery. You'll find us at Poranki, behind
+              Saibaba Temple, and at Gunadala opposite APGenco.
             </p>
 
             <dl className="mt-9 grid grid-cols-3 gap-4">
@@ -67,12 +73,12 @@ export default function About() {
               ))}
             </dl>
 
-            <div className="mt-10">
+            {/* <div className="mt-10">
               <Signature name="krishna" className="ml-1" />
               <p className="mt-3 font-display text-[15px] font-extrabold">
-                krishna <span className="font-bold text-brand">(Co-founder)</span>
+                Krishna <span className="font-bold text-brand">(Founder)</span>
               </p>
-            </div>
+            </div> */}
           </Reveal>
         </div>
 
@@ -83,9 +89,9 @@ export default function About() {
         >
           <img
             src={walkImg}
-            alt="A spaniel and a border collie sitting together in the grass"
-            width={900}
-            height={700}
+            alt="A dog cared for at K-Petz Hospital"
+            width={1122}
+            height={1402}
             loading="lazy"
             className="h-[380px] w-full rounded-[2rem] object-cover sm:h-[480px] lg:h-full lg:min-h-[640px]"
           />

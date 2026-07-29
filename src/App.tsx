@@ -22,12 +22,12 @@ export default function App() {
       <TopBar />
       <main>
         <Hero />
-        <Categories />
+        {/* <Categories /> */}
         <About />
         <Services />
         <Doctors />
-        <Offer />
-        <Products />
+        {/* <Offer />
+        <Products /> */}
         <Testimonials />
       </main>
       <Footer />

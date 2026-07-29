@@ -181,11 +181,11 @@ export function Header() {
       <div className="px-3 md:px-5">
         <div className="container-x flex items-center justify-between gap-3 py-4 sm:gap-6 lg:py-6">
           <a href="#home" className="flex shrink-0 items-center gap-2">
-            <Logo className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
-            <span className="font-display text-[20px] font-black leading-none tracking-tight sm:text-[24px]">
+            <Logo className="h-12 w-12 shrink-0 max-[279px]:h-9 max-[279px]:w-9 sm:h-14 sm:w-14" />
+            <span className="font-display text-[20px] font-black leading-none tracking-tight max-[279px]:text-[16px] sm:text-[24px]">
               K-Petz
-              <span className="block text-[9px] font-extrabold uppercase tracking-[0.22em] opacity-70 sm:text-[10px]">
-                Hospital
+              <span className="block whitespace-nowrap text-[9px] font-extrabold uppercase tracking-[0.12em] opacity-70 max-[279px]:text-[7px] max-[279px]:tracking-[0.02em] sm:text-[10px] sm:tracking-[0.18em]">
+                Hospital Online
               </span>
             </span>
           </a>
@@ -213,7 +213,7 @@ export function Header() {
             <button aria-label="Wishlist" className="hidden p-2 transition hover:text-brand sm:block">
               <Heart className="h-5 w-5" />
             </button>
-            <button aria-label="Cart, 0 items" className="relative p-1.5 transition hover:text-brand sm:p-2">
+            <button aria-label="Cart, 0 items" className="relative p-1.5 transition hover:text-brand max-[279px]:hidden sm:p-2">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-brand text-[10px] font-bold text-white">
                 0
