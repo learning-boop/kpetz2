@@ -23,7 +23,7 @@ const NAV = [
   { label: "Home", href: "#home" },
   { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
-  { label: "Shop", href: "#shop" },
+  // { label: "Shop", href: "#shop" },
   { label: "Reviews", href: "#reviews" },
   { label: "Contact", href: "#contact" },
 ];
@@ -207,7 +207,7 @@ export function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-4">
-            <button aria-label="Search the shop" className="hidden p-2 transition hover:text-brand sm:block">
+            {/* <button aria-label="Search the shop" className="hidden p-2 transition hover:text-brand sm:block">
               <Search className="h-5 w-5" />
             </button>
             <button aria-label="Wishlist" className="hidden p-2 transition hover:text-brand sm:block">
@@ -218,7 +218,7 @@ export function Header() {
               <span className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-brand text-[10px] font-bold text-white">
                 0
               </span>
-            </button>
+            </button> */}
             <button
               onClick={() => openBooking()}
               className="btn btn-primary hidden lg:inline-flex"

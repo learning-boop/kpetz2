@@ -33,7 +33,7 @@ export default function Hero() {
         {/* Content */}
         <div className="container-x relative pt-32 pb-16 md:pt-36 md:pb-20 lg:pt-48 lg:pb-28">
           <div className="max-w-2xl text-cream">
-            <p className="eyebrow text-white">K-Petz Hospital</p>
+            <p className="eyebrow text-white"> Online services</p>
 
             <h1 className="display-xl mt-5 text-gold">
              We love, care <span className="lg:block"> treat your pets</span>

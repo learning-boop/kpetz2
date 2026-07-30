@@ -69,7 +69,7 @@ export function Sparkle({ className = "" }: { className?: string }) {
 /** Rotating certification stamp. Text rides a circular path, paw sits in the middle. */
 export function BadgeStamp({
   className = "",
-  label = "THE PET STORE • FOR PET PARENTS • ",
+  label = "K-PETZ HOSPITAL • VIJAYAWADA • ",
 }: {
   className?: string;
   label?: string;
@@ -92,7 +92,7 @@ export function BadgeStamp({
           fontFamily="Chivo, sans-serif"
           fontSize="10.5"
           fontWeight="800"
-          letterSpacing="2.4"
+          letterSpacing="3.5"
           fill="var(--ink)"
         >
           <textPath href="#stamp-arc" startOffset="0">

@@ -7,23 +7,23 @@ import { useBooking } from "./BookingProvider";
 
 const DOCTORS = [
   {
-    name: "Dr P.Radhika",
-    role: "M.V.Sc Medicine",
-    bio: "Small-animal medicine and preventive care. She runs the first-year puppy and kitten programme, and most of our vaccination schedules are hers.",
-    credentials: ["BVSc & AH", "Small animal medicine"],
+    name: "Dr P. Radhika",
+    role: "Veterinary physician",
+    bio: "Small-animal medicine, diagnostics and preventive care, supported by in-house X-ray, ultrasound scanning and lab facilities.",
+    credentials: ["M.V.Sc", "Medicine"],
     photo: drPrimary,
     /** Framing for the circular crop — adjust per photo. */
     focal: "50% 26%",
-    days: "Mon–Thu, 10am–6pm",
+    days: "Phone 80198 88877",
   },
   {
     name: "Dr K.F.S. Sreekanth",
-    role: "M.V.Sc Medicine",
-    bio: "Soft-tissue surgery, dental work and the difficult cases other clinics pass on. He also handles our rescue intake assessments.",
-    credentials: ["MVSc Surgery", "Dental care"],
+    role: "Veterinary physician",
+    bio: "Medicine and surgical cases, with a fully equipped operating theatre on site for procedures that need it.",
+    credentials: ["M.V.Sc", "Medicine"],
     photo: drSecondary,
     focal: "50% 32%",
-    days: "Tue–Sat, 11am–7pm",
+    days: "Phone 81850 48877",
   },
 ];
 
@@ -40,8 +40,8 @@ export default function Doctors() {
           <p className="eyebrow">Meet the vets</p>
           <h2 className="display-lg mt-5">The Hands Your Pet Is In</h2>
           <p className="lede mt-5">
-            Two resident vets, both on the floor rather than behind a desk. You'll see the same face
-            at every visit, which matters more than most people expect.
+            Two resident veterinary physicians, both M.V.Sc qualified, working with X-ray,
+            ultrasound and a full operating theatre on site.
           </p>
         </Reveal>
 
@@ -91,10 +91,10 @@ export default function Doctors() {
                 </p>
 
                 <button
-                  onClick={() => openBooking(`Consultation with ${doctor.name}`)}
+                  onClick={() => openBooking("Veterinary consultation", doctor.name)}
                   className="btn btn-ink mt-6"
                 >
-                  Book with {doctor.name.split(" ")[1]}
+                  Book with {doctor.name.split(" ").slice(1).join(" ")}
                 </button>
               </article>
             </Reveal>

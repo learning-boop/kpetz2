@@ -10,7 +10,7 @@ import Reveal from "./Reveal";
  * the Gunadala branch opposite APGenco.
  */
 const STATS = [
-  { value: "4.8", label: "Rating" },
+  { value: "4.8", label: "Rating on Justdial" },
   { value: "268", label: "Customer ratings" },
   { value: "2", label: "Vijayawada locations" },
 ];
@@ -26,7 +26,7 @@ export default function About() {
         <Reveal className="lg:col-start-1 lg:col-end-9 lg:row-start-1">
           <p className="eyebrow">Know us</p>
           <h2 className="display-lg mt-5 max-w-[15ch]">
-            We Love, Care, Treat Your Pets
+            Every Pet Treated Like Our Own
           </h2>
         </Reveal>
 

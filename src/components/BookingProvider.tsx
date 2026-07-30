@@ -11,8 +11,8 @@ import { X } from "lucide-react";
 import BookingForm from "./BookingForm";
 
 type BookingContextValue = {
-  /** Opens the appointment dialog. Pass a service name to preselect it. */
-  openBooking: (service?: string) => void;
+  /** Opens the appointment dialog, optionally preselecting a service and doctor. */
+  openBooking: (service?: string, doctor?: string) => void;
   closeBooking: () => void;
 };
 
@@ -27,15 +27,17 @@ export function useBooking() {
 export function BookingProvider({ children }: { children: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [service, setService] = useState<string | undefined>();
+  const [doctor, setDoctor] = useState<string | undefined>();
   const [sent, setSent] = useState(false);
   // Bumped on every open so the form remounts with fresh state — otherwise the
   // service passed in from a card is ignored, because the initial state was
   // already fixed when the dialog first rendered.
   const [openId, setOpenId] = useState(0);
 
-  const openBooking = useCallback((preselect?: string) => {
+  const openBooking = useCallback((preselect?: string, preselectDoctor?: string) => {
     setSent(false);
     setService(preselect);
+    setDoctor(preselectDoctor);
     setOpenId((n) => n + 1);
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -96,7 +98,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
               </button>
             </div>
           ) : (
-            <BookingForm key={openId} service={service} onSuccess={() => setSent(true)} />
+            <BookingForm
+              key={openId}
+              service={service}
+              doctor={doctor}
+              onSuccess={() => setSent(true)}
+            />
           )}
         </div>
       </dialog>

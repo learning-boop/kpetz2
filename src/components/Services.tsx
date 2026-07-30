@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import svcDeworming from "@/assets/svc-deworming.webp";
 import svcVaccination from "@/assets/svc-vaccination.webp";
 import svcHaircut from "@/assets/svc-haircut.webp";
 import svcBathing from "@/assets/svc-bathing.webp";
+import svcBoarding from "@/assets/service-boarding.jpg";
+import svcCoaching from "@/assets/service-training.jpg";
 import dogLying from "@/assets/dog-lying.webp";
 import { BoneMark, PawField, Sparkle } from "./decor/Decor";
 import Reveal from "./Reveal";
@@ -12,31 +14,39 @@ import { useBooking } from "./BookingProvider";
 const SERVICES = [
   {
     img: svcDeworming,
-    title: "Home deworming",
-    where: "At your home",
-    desc: "A vet comes to you for routine deworming — no car journey, no waiting room.",
-    alt: "A veterinarian giving deworming medication to a labrador at home while its owners watch",
+    title: "Deworming",
+    desc: "Routine deworming to keep worms away, for dogs and cats.",
+    alt: "A veterinarian giving deworming medication to a labrador",
   },
   {
     img: svcVaccination,
     title: "Vaccinations",
-    where: "At the clinic",
     desc: "Core vaccinations and boosters, given by a qualified veterinarian.",
     alt: "A veterinarian vaccinating a golden retriever puppy on a clinic table",
   },
   {
+    img: svcCoaching,
+    title: "Pet coaching",
+    desc: "Basic obedience and behaviour training for your dog.",
+    alt: "A trainer working with a small dog on basic commands",
+  },
+  {
     img: svcHaircut,
     title: "Pet hair cut",
-    where: "At the clinic",
     desc: "Breed-appropriate trimming and styling, done at your pet's own pace.",
     alt: "A shih tzu being trimmed with scissors on a grooming table",
   },
   {
     img: svcBathing,
     title: "Bathing",
-    where: "At the clinic",
     desc: "A warm bath, blow-dry and brush-out using skin-friendly shampoo.",
     alt: "A small white dog being lathered with shampoo in a grooming bath",
+  },
+  {
+    img: svcBoarding,
+    title: "Pet boarding",
+    desc: "Your pet stays with us, looked after by the same team that treats them.",
+    alt: "A dog resting comfortably in a boarding kennel",
   },
 ];
 
@@ -81,14 +91,31 @@ export default function Services() {
             <p className="eyebrow text-gold">K-Petz care</p>
             <h2 className="display-lg mt-5 text-white">Excellence In Every Service</h2>
             <p className="mt-5 text-[17px] leading-relaxed text-cream/75">
-              Coaching a new puppy or grooming a spirited parrot — the same team handles both, and
-              they've been doing it for fifteen years.
+              Routine care, grooming and surgery in one place — backed by X-ray, ultrasound
+              scanning and our own lab.
             </p>
           </Reveal>
 
-          <div ref={gridRef} className="mt-14 grid gap-7 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Says plainly where to go for all of the above, and links straight
+              to directions so nobody has to hunt for the address. */}
+          <div className="mt-10 text-center">
+            <p className="font-display text-[18px] font-extrabold text-gold md:text-[21px]">
+              Visit K-Petz for any of these services
+            </p>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=K-Petz+Hospital+Poranki+Vijayawada"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-[15px] font-semibold text-cream/85 underline-offset-4 transition hover:text-white hover:underline"
+            >
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
+              Near Saibaba Temple, Srinivasa Nagar, Poranki
+            </a>
+          </div>
+
+          <div ref={gridRef} className="mt-8 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((service, i) => (
-              <Reveal key={service.title} delay={(i % 4) * 90}>
+              <Reveal key={service.title} delay={(i % 3) * 90}>
                 <article
                   onPointerDown={(e) => {
                     if (e.pointerType !== "mouse") setTapped(i);
@@ -111,10 +138,7 @@ export default function Services() {
                     <h3 className="text-[26px] transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
                       {service.title}
                     </h3>
-                    <p className="mt-1.5 font-display text-[15px] font-extrabold transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
-                      {service.where}
-                    </p>
-                    <p className="mt-3.5 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
+                    <p className="mt-3 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
                       {service.desc}
                     </p>
                   </div>
