@@ -9,11 +9,8 @@ import Reveal from "./Reveal";
  * clinic's Justdial listing, and the two locations are the Poranki hospital and
  * the Gunadala branch opposite APGenco.
  */
-const STATS = [
-  { value: "4.8", label: "Rating on Justdial" },
-  { value: "268", label: "Customer ratings" },
-  { value: "2", label: "Vijayawada locations" },
-];
+
+
 
 export default function About() {
   return (
@@ -59,19 +56,7 @@ export default function About() {
               Saibaba Temple, and at Gunadala opposite APGenco.
             </p>
 
-            <dl className="mt-9 grid grid-cols-3 gap-4">
-              {STATS.map((stat) => (
-                <div key={stat.label}>
-                  <dt className="sr-only">{stat.label}</dt>
-                  <dd className="font-display text-[34px] font-black leading-none md:text-[42px]">
-                    {stat.value}
-                  </dd>
-                  <p className="mt-2 font-display text-[10px] font-extrabold uppercase tracking-[0.16em] text-ink-soft md:text-[11px]">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </dl>
+            
 
             {/* <div className="mt-10">
               <Signature name="krishna" className="ml-1" />

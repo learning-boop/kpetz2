@@ -1,7 +1,7 @@
 import { BookingProvider } from "./components/BookingProvider";
-import { TopBar } from "./components/Header";
 import Hero from "./components/Hero";
-import Categories from "./components/Categories";
+import { TopBar } from "./components/Header";
+import Facilities from "./components/Facilities";
 import About from "./components/About";
 import Services from "./components/Services";
 import Doctors from "./components/Doctors";
@@ -22,7 +22,7 @@ export default function App() {
       <TopBar />
       <main>
         <Hero />
-        {/* <Categories /> */}
+        {/* <Facilities /> */}
         <About />
         <Services />
         <Doctors />

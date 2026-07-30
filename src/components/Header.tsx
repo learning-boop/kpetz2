@@ -2,16 +2,13 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  Bird,
-  Bone,
-  Cat,
-  Dog,
   Heart,
-  Home,
+  Hospital,
   Menu,
-  Search,
-  ShoppingBag,
+  MessageCircle,
   Sparkles,
+  Star,
+  Stethoscope,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -23,26 +20,30 @@ const NAV = [
   { label: "Home", href: "#home" },
   { label: "About", href: "#about" },
   { label: "Services", href: "#services" },
-  // { label: "Shop", href: "#shop" },
   { label: "Reviews", href: "#reviews" },
   { label: "Contact", href: "#contact" },
 ];
 
-const CATEGORIES = [
-  { label: "Travel cage", Icon: Home },
-  { label: "Special edition", Icon: Sparkles },
-  { label: "Shop for dogs", Icon: Dog },
-  { label: "Shop for cats", Icon: Cat },
-  { label: "Pet accessories", Icon: Bone },
-  { label: "Shop for birds", Icon: Bird },
+/**
+ * Reasons to trust the clinic, in place of the old shop categories. Each links
+ * to the section that backs it up, and each is grounded in something real: the
+ * doctors' M.V.Sc qualifications, the client's brief for online consultancy,
+ * the pamphlet's equipment list, and the review tags and 4.8 rating on their
+ * Justdial listing.
+ */
+const HIGHLIGHTS = [
+  { label: "Expert doctors", Icon: Stethoscope, href: "#vets" },
+  { label: "Online consultancy", Icon: MessageCircle, href: "#home" },
+  { label: "Modern facilities", Icon: Hospital, href: "#facilities" },
+  { label: "Clean equipment", Icon: Sparkles, href: "#facilities" },
+  { label: "Gentle care", Icon: Heart, href: "#reviews" },
+  { label: "Rated 4.8", Icon: Star, href: "#reviews" },
 ];
-
-const CATEGORY_HOLD = 3800;
 
 export function TopBar() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  // Read synchronously so the desktop row doesn't flash the carousel first.
+  // Read synchronously so the wide row doesn't flash the carousel first.
   const [isWide, setIsWide] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches
   );
@@ -65,7 +66,7 @@ export function TopBar() {
   }, []);
 
   const go = (step: number) =>
-    setIndex((i) => (i + step + CATEGORIES.length) % CATEGORIES.length);
+    setIndex((i) => (i + step + HIGHLIGHTS.length) % HIGHLIGHTS.length);
 
   useEffect(() => {
     if (isWide || paused || reduceMotion) return;
@@ -73,20 +74,26 @@ export function TopBar() {
     return () => clearTimeout(t);
   }, [index, isWide, paused, reduceMotion]);
 
-  const link = (label: string, Icon: LucideIcon, active = true, compact = false) => (
+  const link = (
+    label: string,
+    Icon: LucideIcon,
+    href: string,
+    active = true,
+    compact = false
+  ) => (
     <a
-      href="#shop"
+      href={href}
       tabIndex={active ? undefined : -1}
       className={
         compact
-          ? // Desktop row: tightened so all six fit from 1024px up, easing back
-            // out to full size on wider screens.
-            "flex items-center justify-center gap-2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-[0.06em] transition hover:text-brand xl:gap-2.5 xl:text-[12px] xl:tracking-[0.1em] 2xl:text-[13px] 2xl:tracking-[0.14em]"
-          : "flex items-center justify-center gap-2.5 whitespace-nowrap font-display text-[13px] font-extrabold uppercase tracking-[0.14em] transition hover:text-brand"
+          ? // Wide row: tightened so all six fit from 1024px up, easing back out
+            // to full size on larger screens.
+            "flex items-center justify-center gap-2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-[0.06em] transition hover:text-gold xl:gap-2.5 xl:text-[12px] xl:tracking-[0.1em] 2xl:text-[13px] 2xl:tracking-[0.14em]"
+          : "flex items-center justify-center gap-2.5 whitespace-nowrap font-display text-[13px] font-extrabold uppercase tracking-[0.14em] transition hover:text-gold"
       }
     >
       <Icon
-        className={`shrink-0 text-brand ${compact ? "h-4 w-4 xl:h-4.5 xl:w-4.5" : "h-4.5 w-4.5"}`}
+        className={`shrink-0 text-gold ${compact ? "h-4 w-4 xl:h-4.5 xl:w-4.5" : "h-4.5 w-4.5"}`}
         aria-hidden="true"
       />
       {label}
@@ -95,12 +102,12 @@ export function TopBar() {
 
   return (
     <div className="p-3 md:p-5">
-      <nav aria-label="Shop categories" className="rounded-2xl bg-bark text-cream">
+      <nav aria-label="Why K-Petz" className="rounded-2xl bg-bark text-cream">
         {isWide ? (
           <ul className="flex items-center justify-between gap-2 px-4 py-4 xl:gap-3 xl:px-8 2xl:px-10">
-            {CATEGORIES.map(({ label, Icon }) => (
+            {HIGHLIGHTS.map(({ label, Icon, href }) => (
               <li key={label} className="shrink-0">
-                {link(label, Icon, true, true)}
+                {link(label, Icon, href, true, true)}
               </li>
             ))}
           </ul>
@@ -114,26 +121,26 @@ export function TopBar() {
           >
             <button
               onClick={() => go(-1)}
-              aria-label="Previous category"
-              className="shrink-0 p-1 transition hover:text-brand"
+              aria-label="Previous highlight"
+              className="shrink-0 p-1 transition hover:text-gold"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
 
             {/* All six stay in the DOM — only the active one is visible, so the
-                links remain crawlable and the track can slide between them. */}
+                links stay crawlable and the track can slide between them. */}
             <div className="min-w-0 flex-1 overflow-hidden">
               <ul
                 className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
                 style={{ transform: `translateX(-${index * 100}%)` }}
               >
-                {CATEGORIES.map(({ label, Icon }, i) => (
+                {HIGHLIGHTS.map(({ label, Icon, href }, i) => (
                   <li
                     key={label}
                     className="w-full shrink-0"
                     aria-hidden={i !== index || undefined}
                   >
-                    {link(label, Icon, i === index)}
+                    {link(label, Icon, href, i === index)}
                   </li>
                 ))}
               </ul>
@@ -141,8 +148,8 @@ export function TopBar() {
 
             <button
               onClick={() => go(1)}
-              aria-label="Next category"
-              className="shrink-0 p-1 transition hover:text-brand"
+              aria-label="Next highlight"
+              className="shrink-0 p-1 transition hover:text-gold"
             >
               <ArrowRight className="h-5 w-5" />
             </button>
@@ -207,18 +214,6 @@ export function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-4">
-            {/* <button aria-label="Search the shop" className="hidden p-2 transition hover:text-brand sm:block">
-              <Search className="h-5 w-5" />
-            </button>
-            <button aria-label="Wishlist" className="hidden p-2 transition hover:text-brand sm:block">
-              <Heart className="h-5 w-5" />
-            </button>
-            <button aria-label="Cart, 0 items" className="relative p-1.5 transition hover:text-brand max-[279px]:hidden sm:p-2">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-brand text-[10px] font-bold text-white">
-                0
-              </span>
-            </button> */}
             <button
               onClick={() => openBooking()}
               className="btn btn-primary hidden lg:inline-flex"

@@ -33,15 +33,15 @@ export default function Hero() {
         {/* Content */}
         <div className="container-x relative pt-32 pb-16 md:pt-36 md:pb-20 lg:pt-48 lg:pb-28">
           <div className="max-w-2xl text-cream">
-            <p className="eyebrow text-white"> Online services</p>
+            <p className="eyebrow text-gold">K-Petz Hospital</p>
 
-            <h1 className="display-xl mt-5 text-gold">
-             We love, care <span className="lg:block"> treat your pets</span>
+            <h1 className="display-xl mt-5 text-white">
+              Online <span className="lg:block">Services</span>
             </h1>
 
-            {/* <p className="mt-6 font-display text-[20px] font-extrabold leading-snug text-gold md:text-[24px]">
+            <p className="mt-6 font-display text-[20px] font-extrabold leading-snug text-gold md:text-[24px]">
               We love, care, treat your pets
-            </p> */}
+            </p>
 
             <ol className="mt-9 grid gap-4">
               {ONLINE_SERVICES.map((service, i) => (

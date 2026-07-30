@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const POSTER = "/media/kpetz-hero-poster.jpg";
-const DESKTOP_SRC = "/media/hero-video2.mp4";
+const DESKTOP_SRC = "/media/kpetz-hero.mp4";
 /** 720px wide, ~600KB instead of 2.2MB. A phone on 3G may never finish the big file. */
 const MOBILE_SRC = "/media/kpetz-hero-mobile.mp4";
 const DESCRIPTION = "A golden retriever running across a sunlit park towards its owner";
