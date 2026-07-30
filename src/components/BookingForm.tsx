@@ -6,10 +6,10 @@ const PET_TYPES = ["Dog", "Cat", "Bird", "Small mammal"];
 const SERVICES = [
   "Deworming",
   "Vaccinations",
+  "Pet surgeries",
   "Pet hair cut",
   "Bathing",
   "Pet boarding",
-  "Pet coaching",
   "Online consultancy (first aid)",
   "Second opinion",
   "Veterinary consultation",

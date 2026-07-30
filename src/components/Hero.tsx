@@ -35,9 +35,9 @@ export default function Hero() {
           <div className="max-w-2xl text-cream">
             <p className="eyebrow text-gold">K-Petz Hospital</p>
 
-            <h1 className="display-xl mt-5 text-white">
-              Online <span className="lg:block">Services</span>
-            </h1>
+            <h3 className="display-xl mt-5 text-white">
+  Online Pet <span className="block">Consultation</span>
+</h3>
 
             <p className="mt-6 font-display text-[20px] font-extrabold leading-snug text-gold md:text-[24px]">
               We love, care, treat your pets

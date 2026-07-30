@@ -5,7 +5,7 @@ import svcVaccination from "@/assets/svc-vaccination.webp";
 import svcHaircut from "@/assets/svc-haircut.webp";
 import svcBathing from "@/assets/svc-bathing.webp";
 import svcBoarding from "@/assets/service-boarding.jpg";
-import svcCoaching from "@/assets/service-training.jpg";
+import svcSurgery from "@/assets/svc-surgery.webp";
 import dogLying from "@/assets/dog-lying.webp";
 import { BoneMark, PawField, Sparkle } from "./decor/Decor";
 import Reveal from "./Reveal";
@@ -25,10 +25,10 @@ const SERVICES = [
     alt: "A veterinarian vaccinating a golden retriever puppy on a clinic table",
   },
   {
-    img: svcCoaching,
-    title: "Pet coaching",
-    desc: "Basic obedience and behaviour training for your dog.",
-    alt: "A trainer working with a small dog on basic commands",
+    img: svcSurgery,
+    title: "Pet surgeries",
+    desc: "Soft-tissue and routine surgical procedures in our own operation theatre.",
+    alt: "Two veterinary surgeons operating on a sedated dog in an operating theatre",
   },
   {
     img: svcHaircut,
@@ -91,8 +91,8 @@ export default function Services() {
             <p className="eyebrow text-gold">K-Petz care</p>
             <h2 className="display-lg mt-5 text-white">Excellence In Every Service</h2>
             <p className="mt-5 text-[17px] leading-relaxed text-cream/75">
-              Routine care, grooming and surgery in one place — backed by X-ray, ultrasound
-              scanning and our own lab.
+              Everyday care, grooming and surgery — all handled by the same team who know your
+              pet.
             </p>
           </Reveal>
 
