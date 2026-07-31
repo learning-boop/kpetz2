@@ -322,7 +322,7 @@
 
 dialog.booking-dialog {
   margin: auto;
-  width: min(100% - 1.5rem, 34rem);
+  width: min(100% - 1.5rem, 40rem);
   max-height: calc(100dvh - 2rem);
   padding: 0;
   border: 0;

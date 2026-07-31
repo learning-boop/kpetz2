@@ -33,7 +33,7 @@ const SERVICES = [
   {
     img: svcHaircut,
     title: "Pet hair cut",
-    desc: "Breed-appropriate trimming and styling, done at your pet's own pace.",
+    desc: "We trim and style your pet based on their breed and comfort.",
     alt: "A shih tzu being trimmed with scissors on a grooming table",
   },
   {

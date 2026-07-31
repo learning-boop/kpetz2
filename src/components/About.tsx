@@ -51,7 +51,7 @@ export default function About() {
               elsewhere.
             </p>
             <p className="lede mt-4">
-              Two M.V.Sc qualified veterinarians look after dogs, cats and small pets, from routine
+              Two M.V.Sc qualified veterinarians look after dogs, cats. from routine
               vaccination and deworming through to surgery. You'll find us at Poranki, behind
               Saibaba Temple, and at Gunadala opposite APGenco.
             </p>
