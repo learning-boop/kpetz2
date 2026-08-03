@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const POSTER = "/media/kpetz-hero-poster.jpg";
 const DESKTOP_SRC = "/media/kpetz-hero.mp4";
-/** 720px wide, ~600KB instead of 2.2MB. A phone on 3G may never finish the big file. */
+/** 720px, H.264 Baseline. Serves every screen up to 1024px — phones in landscape
+ * and small tablets were previously pulling the full-size file. */
 const MOBILE_SRC = "/media/kpetz-hero-mobile.mp4";
 const DESCRIPTION = "A golden retriever running across a sunlit park towards its owner";
 
@@ -16,14 +17,14 @@ export default function HeroVideo({ className = "" }: Props) {
   // Read both synchronously. If `small` started false, mobile would request the
   // 2.2MB desktop file, then remount and fetch the small one — wasting the whole
   // download and delaying playback badly on a slow connection.
-  const [small, setSmall] = useState(() => mq("(max-width: 640px)"));
+  const [small, setSmall] = useState(() => mq("(max-width: 1024px)"));
   const [reduceMotion, setReduceMotion] = useState(() =>
     mq("(prefers-reduced-motion: reduce)")
   );
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const width = window.matchMedia("(max-width: 640px)");
+    const width = window.matchMedia("(max-width: 1024px)");
     const sync = () => {
       setReduceMotion(motion.matches);
       setSmall(width.matches);

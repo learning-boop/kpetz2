@@ -49,6 +49,9 @@ const HOME_VISIT = ["Home deworming and vaccination"];
 const HOME_VISIT_CITY = "Vijayawada";
 const HOME_VISIT_STATE = "Andhra Pradesh";
 
+/** Neutral default. Home-visit services restrict the city, so never default to one. */
+const DEFAULT_SERVICE = "Veterinary consultation";
+
 const SERVICES = [
   "Home deworming and vaccination",
   "Online consultancy (first aid)", "Second opinion", "Veterinary consultation",
@@ -74,6 +77,8 @@ type Props = { service?: string; doctor?: string; onSuccess?: () => void };
 export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const [step, setStep] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
+  const [cityClash, setCityClash] = useState(false);
+  const [data, setData] = useState<Record<string, string>>({});
   const stepRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +88,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   );
 
   const [form, setForm] = useState({
-    service: service ?? SERVICES[0],
+    service: service ?? DEFAULT_SERVICE,
     doctor: doctor ?? DOCTORS[2],
     vaccinated: VACCINATED[2],
     slot: "",
@@ -94,18 +99,27 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   /** Home visits only cover the clinic's own city, so the address is fixed. */
   const homeVisit = HOME_VISIT.includes(form.service);
 
+  /** Whatever city they gave at step 1, kept in state once that step unmounted. */
+  const cityEntered = (data.city ?? "").trim();
+
   /** Everything typed so far, keyed by field name, for the booking request. */
-  const collect = () => {
-    const data: Record<string, string> = {};
-    Object.entries(form).forEach(([k, v]) => (data[k] = String(v)));
-    formRef.current
+  /** Reads the fields currently on screen. Called before each step unmounts. */
+  const snapshot = () => {
+    const found: Record<string, string> = {};
+    stepRef.current
       ?.querySelectorAll<HTMLInputElement>("input[name], select[name], textarea[name]")
       .forEach((el) => {
         if (el.type === "file") return;
-        if (el.type === "checkbox") data[el.name] = String(el.checked);
-        else if (el.value) data[el.name] = el.value;
+        found[el.name] = el.type === "checkbox" ? String(el.checked) : el.value;
       });
-    return data;
+    setData((d) => ({ ...d, ...found }));
+    return found;
+  };
+
+  const collect = () => {
+    const merged: Record<string, string> = { ...data };
+    Object.entries(form).forEach(([k, v]) => (merged[k] = String(v)));
+    return merged;
   };
 
   /** Multipart, so the photos travel with the booking in one request. */
@@ -122,8 +136,14 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     for (const field of Array.from(fields ?? [])) {
       if (!field.reportValidity()) return;
     }
+    snapshot();
     if (step === 2 && !form.slot) {
       window.alert("Please choose a slot.");
+      return;
+    }
+    // They may have entered another city at step 1, then picked a home visit here.
+    if (step === 2 && homeVisit && cityEntered && cityEntered.toLowerCase() !== HOME_VISIT_CITY.toLowerCase()) {
+      setCityClash(true);
       return;
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -229,13 +249,15 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>Your name</span>
-                  <input required name="ownerName" placeholder="Priya Sharma" className="field" />
+                  <input required name="ownerName"
+                  defaultValue={data.ownerName ?? ""} placeholder="Priya Sharma" className="field" />
                 </label>
                 <label className="block">
                   <span className={LABEL}>Phone</span>
                   <input
                     required
                     name="phone"
+                  defaultValue={data.phone ?? ""}
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9+ ]{10,15}"
@@ -247,7 +269,8 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               </div>
               <label className="block">
                 <span className={LABEL}>Email</span>
-                <input required name="email" type="email" placeholder="priya@example.com" className="field" />
+                <input required name="email"
+                  defaultValue={data.email ?? ""} type="email" placeholder="priya@example.com" className="field" />
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
@@ -271,7 +294,13 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                       <option>{HOME_VISIT_CITY}</option>
                     </select>
                   ) : (
-                    <input required name="city" placeholder="Vijayawada" className="field" />
+                    <input
+                      required
+                      name="city"
+                      defaultValue={data.city ?? ""}
+                      placeholder="Vijayawada"
+                      className="field"
+                    />
                   )}
                 </label>
               </div>
@@ -290,11 +319,12 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>Pet's name</span>
-                  <input required name="petName" placeholder="Tommy" className="field" />
+                  <input required name="petName"
+                  defaultValue={data.petName ?? ""} placeholder="Tommy" className="field" />
                 </label>
                 <label className="block">
                   <span className={LABEL}>Species</span>
-                  <select name="species" className="field">
+                  <select name="species" defaultValue={data.species} className="field">
                     {SPECIES.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
@@ -304,11 +334,12 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className="block">
                   <span className={LABEL}>Age</span>
-                  <input required name="age" placeholder="2 years" className="field" />
+                  <input required name="age"
+                  defaultValue={data.age ?? ""} placeholder="2 years" className="field" />
                 </label>
                 <label className="block">
                   <span className={LABEL}>Sex</span>
-                  <select name="sex" className="field">
+                  <select name="sex" defaultValue={data.sex} className="field">
                     {SEXES.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
@@ -316,12 +347,14 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 </label>
                 <label className="block">
                   <span className={LABEL}>Weight (kg)</span>
-                  <input name="weight" type="number" min="0" step="0.1" placeholder="12" className="field" />
+                  <input name="weight"
+                  defaultValue={data.weight ?? ""} type="number" min="0" step="0.1" placeholder="12" className="field" />
                 </label>
               </div>
               <label className="block">
                 <span className={LABEL}>Breed</span>
-                <input name="breed" placeholder="Labrador" className="field" />
+                <input name="breed"
+                  defaultValue={data.breed ?? ""} placeholder="Labrador" className="field" />
               </label>
               <label className="block">
                 <span className={LABEL}>Vaccinated?</span>
@@ -340,6 +373,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 <span className={LABEL}>Last vaccination date</span>
                 <input
                   name="lastVaccinationDate"
+                  defaultValue={data.lastVaccinationDate ?? ""}
                   type="date"
                   max={new Date().toISOString().slice(0, 10)}
                   className="field"
@@ -349,6 +383,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 <span className={LABEL}>Previous vaccination history</span>
                 <textarea
                   name="vaccinationHistory"
+                  defaultValue={data.vaccinationHistory ?? ""}
                   rows={3}
                   placeholder="Which vaccines your pet has had and roughly when — rabies, DHPPi, boosters. Leave blank if none."
                   className="field !rounded-2xl"
@@ -382,6 +417,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 <textarea
                   required
                   name="problem"
+                  defaultValue={data.problem ?? ""}
                   rows={3}
                   placeholder="What's wrong, when it started, and anything you've already tried"
                   className="field !rounded-2xl"
@@ -400,7 +436,10 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                     name="service"
                     className="field"
                     value={form.service}
-                    onChange={(e) => set("service", e.target.value)}
+                    onChange={(e) => {
+                      set("service", e.target.value);
+                      setCityClash(false);
+                    }}
                   >
                     {serviceOptions.map((s) => (
                       <option key={s}>{s}</option>
@@ -426,6 +465,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 <input
                   required
                   name="date"
+                  defaultValue={data.date ?? ""}
                   type="date"
                   min={new Date().toISOString().slice(0, 10)}
                   className="field"
@@ -454,6 +494,12 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   Clinic hours, 9am–9pm. We'll ring you back to confirm the slot.
                 </p>
               </fieldset>
+              {cityClash && (
+                <p role="alert" className="rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink">
+                  Home visits are available in {HOME_VISIT_CITY} only, but you entered{" "}
+                  {cityEntered}. Go back and change the city, or choose a different service.
+                </p>
+              )}
             </>
           )}
 
@@ -542,7 +588,10 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
           {step > 0 && (
             <button
               type="button"
-              onClick={() => setStep((s) => s - 1)}
+              onClick={() => {
+                snapshot();
+                setStep((s) => s - 1);
+              }}
               className="btn border-2 border-white/40 text-white hover:bg-white hover:text-ink"
             >
               Back
