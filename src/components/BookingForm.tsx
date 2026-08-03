@@ -40,11 +40,17 @@ const STATES = [
   "Chhattisgarh", "Uttarakhand", "Himachal Pradesh", "Goa", "Other",
 ];
 
-const SPECIES = ["Dog", "Cat","Other"];
+const SPECIES = ["Dog", "Cat", "Bird", "Rabbit", "Other"];
 const SEXES = ["Male", "Female", "Not sure"];
 const VACCINATED = ["Yes", "No", "Not sure"];
 
+/** Services the vet travels for — restricted to the city the clinic covers. */
+const HOME_VISIT = ["Home deworming and vaccination"];
+const HOME_VISIT_CITY = "Vijayawada";
+const HOME_VISIT_STATE = "Andhra Pradesh";
+
 const SERVICES = [
+  "Home deworming and vaccination",
   "Online consultancy (first aid)", "Second opinion", "Veterinary consultation",
   "Deworming", "Vaccinations", "Pet surgeries", "Pet hair cut", "Bathing",
   "Pet boarding", "Other enquiry",
@@ -67,6 +73,7 @@ type Props = { service?: string; doctor?: string; onSuccess?: () => void };
 
 export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const [step, setStep] = useState(0);
+  const [files, setFiles] = useState<File[]>([]);
   const stepRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -84,16 +91,29 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   });
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
+  /** Home visits only cover the clinic's own city, so the address is fixed. */
+  const homeVisit = HOME_VISIT.includes(form.service);
+
   /** Everything typed so far, keyed by field name, for the booking request. */
   const collect = () => {
-    const data: Record<string, unknown> = { ...form };
+    const data: Record<string, string> = {};
+    Object.entries(form).forEach(([k, v]) => (data[k] = String(v)));
     formRef.current
       ?.querySelectorAll<HTMLInputElement>("input[name], select[name], textarea[name]")
       .forEach((el) => {
-        if (el.type === "checkbox") data[el.name] = el.checked;
+        if (el.type === "file") return;
+        if (el.type === "checkbox") data[el.name] = String(el.checked);
         else if (el.value) data[el.name] = el.value;
       });
     return data;
+  };
+
+  /** Multipart, so the photos travel with the booking in one request. */
+  const asFormData = () => {
+    const fd = new FormData();
+    Object.entries(collect()).forEach(([k, v]) => fd.append(k, v));
+    files.forEach((f) => fd.append("attachments[]", f));
+    return fd;
   };
 
   /** Native validation, scoped to the fields in the step being left. */
@@ -136,10 +156,10 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
       const payload = collect();
 
       // The server decides the amount — never send it from here.
+      // No Content-Type header: the browser sets the multipart boundary itself.
       const res = await fetch(`${API_BASE}/api/bookings`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: asFormData(),
       });
       if (!res.ok) throw new Error("Could not start the payment.");
       const { orderId, amount, currency, bookingId } = await res.json();
@@ -232,17 +252,35 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>State</span>
-                  <select required name="state" defaultValue="Andhra Pradesh" className="field">
-                    {STATES.map((s) => (
+                  <select
+                    required
+                    name="state"
+                    defaultValue={homeVisit ? HOME_VISIT_STATE : "Andhra Pradesh"}
+                    disabled={homeVisit}
+                    className="field disabled:opacity-70"
+                  >
+                    {(homeVisit ? [HOME_VISIT_STATE] : STATES).map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </label>
                 <label className="block">
                   <span className={LABEL}>City</span>
-                  <input required name="city" placeholder="Vijayawada" className="field" />
+                  {homeVisit ? (
+                    <select required name="city" className="field disabled:opacity-70" disabled>
+                      <option>{HOME_VISIT_CITY}</option>
+                    </select>
+                  ) : (
+                    <input required name="city" placeholder="Vijayawada" className="field" />
+                  )}
                 </label>
               </div>
+              {homeVisit && (
+                <p className="text-xs font-semibold text-white/85">
+                  Home visits are available in {HOME_VISIT_CITY} only. For anywhere else, choose a
+                  different service or visit the clinic.
+                </p>
+              )}
             </>
           )}
 
@@ -316,6 +354,29 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   className="field !rounded-2xl"
                 />
               </label>
+              <label className="block">
+                <span className={LABEL}>Photos or a short video (optional)</span>
+                <input
+                  type="file"
+                  name="attachments"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
+                  className="w-full rounded-2xl bg-white/15 px-4 py-3 text-[14px] font-semibold text-white file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-1.5 file:font-display file:text-[12px] file:font-extrabold file:text-ink"
+                />
+                <span className="mt-1.5 block text-xs font-semibold text-white/80">
+                  A clear photo of the problem helps the vet far more than a description. Up to 5
+                  files.
+                </span>
+                {files.length > 0 && (
+                  <ul className="mt-2 grid gap-1 text-xs font-semibold text-white/90">
+                    {files.map((f) => (
+                      <li key={f.name}>• {f.name} ({Math.round(f.size / 1024)} KB)</li>
+                    ))}
+                  </ul>
+                )}
+              </label>
+
               <label className="block">
                 <span className={LABEL}>Describe the problem</span>
                 <textarea
