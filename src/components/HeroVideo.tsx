@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const POSTER = "/media/kpetz-hero-poster.jpg";
-const DESKTOP_SRC = "/media/kpetz-hero.mp4";
+const DESKTOP_SRC = "/media/kpetz-hero-clean.mp4";
 /** 720px, H.264 Baseline. Serves every screen up to 1024px — phones in landscape
  * and small tablets were previously pulling the full-size file. */
 const MOBILE_SRC = "/media/kpetz-hero-mobile.mp4";
