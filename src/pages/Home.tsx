@@ -21,12 +21,11 @@ export default function Home() {
       <TopBar />
       <main>
         <Hero />
-        <Facilities />
+       
         <About />
         <Services />
         <Doctors />
-        <Offer />
-        <Products />
+       
         <Testimonials />
       </main>
       <Footer />
