@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -168,6 +169,14 @@ export function TopBar() {
 
 export function Header() {
   const { openBooking } = useBooking();
+  const { pathname } = useLocation();
+  const onHome = pathname === "/";
+
+  /**
+   * On the home page these are in-page anchors. From a policy page they need
+   * the leading slash, so the browser goes home first and then scrolls.
+   */
+  const sectionHref = (hash: string) => (onHome ? hash : `/${hash}`);
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
 
@@ -193,7 +202,11 @@ export function Header() {
     >
       <div className="px-3 md:px-5">
         <div className="container-x flex items-center justify-between gap-3 py-4 sm:gap-6 lg:py-6">
-          <a href="#home" className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/"
+            onClick={() => onHome && window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex shrink-0 items-center gap-2"
+          >
             <Logo className="h-12 w-12 shrink-0 max-[279px]:h-9 max-[279px]:w-9 sm:h-14 sm:w-14" />
             <span className="font-display text-[20px] font-black leading-none tracking-tight max-[279px]:text-[16px] sm:text-[24px]">
               K-Petz
@@ -201,7 +214,7 @@ export function Header() {
                 Hospital Online
               </span>
             </span>
-          </a>
+          </Link>
 
           <nav aria-label="Primary" className="hidden xl:block">
             <ul
@@ -211,7 +224,7 @@ export function Header() {
             >
               {NAV.map((item) => (
                 <li key={item.href}>
-                  <a href={item.href} className="transition hover:text-brand">
+                  <a href={sectionHref(item.href)} className="transition hover:text-brand">
                     {item.label}
                   </a>
                 </li>
@@ -283,7 +296,7 @@ export function Header() {
               {NAV.map((item) => (
                 <li key={item.href}>
                   <a
-                    href={item.href}
+                    href={sectionHref(item.href)}
                     onClick={() => setOpen(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-4 font-display text-lg font-extrabold transition hover:bg-sand"
                   >
