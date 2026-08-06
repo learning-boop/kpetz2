@@ -16,6 +16,12 @@ import { PawMark } from "./decor/Decor";
 import Logo from "./Logo";
 import { useBooking } from "./BookingProvider";
 
+/**
+ * The Laravel admin. Only staff sign in here — customers have no accounts —
+ * so it's a quiet secondary link rather than a primary call to action.
+ */
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? "http://localhost:8000/admin";
+
 const NAV = [
   { label: "Home", href: "#home" },
   { label: "About", href: "#about" },
@@ -214,6 +220,14 @@ export function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-4">
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden font-display text-[12px] font-extrabold uppercase tracking-[0.14em] opacity-70 transition hover:text-gold hover:opacity-100 lg:inline-flex"
+            >
+              Staff login
+            </a>
             <button
               onClick={() => openBooking()}
               className="btn btn-primary hidden lg:inline-flex"
@@ -281,15 +295,25 @@ export function Header() {
             </ul>
           </nav>
 
-          <button
-            onClick={() => {
-              setOpen(false);
-              openBooking();
-            }}
-            className="btn btn-primary mt-auto w-full"
-          >
-            Get in touch
-          </button>
+          <div className="mt-auto grid gap-3">
+            <button
+              onClick={() => {
+                setOpen(false);
+                openBooking();
+              }}
+              className="btn btn-primary w-full"
+            >
+              Get in touch
+            </button>
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 block text-center font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-ink-soft transition hover:text-brand"
+            >
+              Staff login
+            </a>
+          </div>
         </div>
       </div>
     </header>

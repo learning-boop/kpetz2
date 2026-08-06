@@ -1,18 +1,38 @@
 import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PawMark } from "./decor/Decor";
 import Logo from "./Logo";
 
-const SHOP = ["Dog food", "Cat food", "Bird supplies", "Collars & leads", "Toys", "Grooming kits"];
-const COMPANY = ["About us", "Our services"];
+/**
+ * Section links use plain hrefs with a leading slash, not hash-only anchors:
+ * the footer also renders on /terms and /privacy, where "#about" would just
+ * change the hash without going anywhere.
+ */
+const COMPANY = [
+  { label: "About us", href: "/#about" },
+  { label: "Our services", href: "/#services" },
+  { label: "Our doctors", href: "/#vets" },
+  { label: "Reviews", href: "/#reviews" },
+];
+
+/** Real routes, so these use Link and don't reload the page. */
+const LEGAL = [
+  { label: "Terms & conditions", to: "/terms" },
+  { label: "Privacy policy", to: "/privacy" },
+  { label: "Refunds & cancellation", to: "/refunds" },
+  { label: "Contact us", to: "/contact-us" },
+];
+
+const ADMIN_URL = `${import.meta.env.VITE_ADMIN_URL ?? import.meta.env.VITE_API_URL ?? ""}/admin`;
 
 export default function Footer() {
   return (
     <footer id="contact" className="relative overflow-hidden bg-ink text-cream">
       <PawMark className="pointer-events-none absolute -right-16 top-10 h-72 w-72 -rotate-12 text-white/5" />
 
-      <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+      <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1.2fr_1.2fr]">
         <div>
-          <a href="#home" className="flex items-center gap-2.5">
+          <a href="/#home" className="flex items-center gap-2.5">
             <Logo className="h-14 w-14 shrink-0" />
             <span className="font-display text-[24px] font-black leading-none tracking-tight">
               K-Petz
@@ -21,7 +41,12 @@ export default function Footer() {
               </span>
             </span>
           </a>
-          
+
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-cream/70">
+            We love, care, treat your pets. A full veterinary hospital at Poranki and Gunadala,
+            Vijayawada.
+          </p>
+
           <div className="mt-6 flex gap-3">
             {[
               { Icon: Instagram, label: "Instagram" },
@@ -30,7 +55,7 @@ export default function Footer() {
             ].map(({ Icon, label }) => (
               <a
                 key={label}
-                href="#contact"
+                href="/#contact"
                 aria-label={label}
                 className="grid h-11 w-11 place-items-center rounded-full bg-white/10 transition hover:bg-brand"
               >
@@ -40,18 +65,31 @@ export default function Footer() {
           </div>
         </div>
 
-        
-
         <nav aria-label="Company">
           <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
             Company
           </h2>
           <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
-            {COMPANY.map((item) => (
-              <li key={item}>
-                <a href="#about" className="transition hover:text-gold">
-                  {item}
+            {COMPANY.map(({ label, href }) => (
+              <li key={label}>
+                <a href={href} className="transition hover:text-gold">
+                  {label}
                 </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Legal">
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
+            Legal
+          </h2>
+          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
+            {LEGAL.map(({ label, to }) => (
+              <li key={label}>
+                <Link to={to} className="transition hover:text-gold">
+                  {label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -107,15 +145,23 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-xs font-semibold text-cream/55 sm:flex-row">
           <p>© {new Date().getFullYear()} K-Petz Hospital. All rights reserved.</p>
-          <p className="flex gap-5">
-            <a href="#contact" className="hover:text-gold">
+          <p className="flex flex-wrap justify-center gap-5">
+            <Link to="/privacy" className="hover:text-gold">
               Privacy
-            </a>
-            <a href="#contact" className="hover:text-gold">
+            </Link>
+            <Link to="/terms" className="hover:text-gold">
               Terms
-            </a>
-            <a href="#contact" className="hover:text-gold">
-              Shipping
+            </Link>
+            <Link to="/refunds" className="hover:text-gold">
+              Refunds
+            </Link>
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="opacity-70 hover:text-gold hover:opacity-100"
+            >
+              Staff login
             </a>
           </p>
         </div>
