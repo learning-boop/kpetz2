@@ -1,12 +1,15 @@
-import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Clock, Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PawMark } from "./decor/Decor";
 import Logo from "./Logo";
+import { telHref, useSettings } from "./SettingsProvider";
+
+const API = import.meta.env.VITE_API_URL ?? "";
 
 /**
- * Section links use plain hrefs with a leading slash, not hash-only anchors:
- * the footer also renders on /terms and /privacy, where "#about" would just
- * change the hash without going anywhere.
+ * Section links use a leading slash, not a bare hash: the footer also renders
+ * on /terms and /vet-home-visit, where "#about" would only change the hash
+ * without going anywhere.
  */
 const COMPANY = [
   { label: "About us", href: "/#about" },
@@ -15,7 +18,19 @@ const COMPANY = [
   { label: "Reviews", href: "/#reviews" },
 ];
 
-/** Real routes, so these use Link and don't reload the page. */
+/**
+ * The service landing pages. Linking them here is what stops them being
+ * orphaned — an unlinked page ranks poorly however good its content.
+ */
+const SERVICES = [
+  { label: "Vet home visit", to: "/vet-home-visit" },
+  { label: "Vaccination at home", to: "/pet-vaccination-at-home" },
+  { label: "Pet home treatment", to: "/pet-home-treatment" },
+  { label: "Online vet consultation", to: "/online-vet-consultation" },
+  { label: "Second opinion", to: "/vet-second-opinion" },
+  { label: "Pet care advice", to: "/blog" },
+];
+
 const LEGAL = [
   { label: "Terms & conditions", to: "/terms" },
   { label: "Privacy policy", to: "/privacy" },
@@ -23,17 +38,38 @@ const LEGAL = [
   { label: "Contact us", to: "/contact-us" },
 ];
 
-const ADMIN_URL = `${import.meta.env.VITE_ADMIN_URL ?? import.meta.env.VITE_API_URL ?? ""}/admin`;
+const ADMIN_URL = `${import.meta.env.VITE_ADMIN_URL ?? API}/admin`;
+
+const HEADING = "font-display text-[13px] font-extrabold uppercase tracking-[0.14em] text-gold";
+const LINK = "text-[15px] leading-snug text-cream/70 transition hover:text-gold";
 
 export default function Footer() {
+  const s = useSettings();
+
+  // An icon that goes nowhere looks broken, so an empty URL hides it entirely.
+  const socials = [
+    { Icon: Instagram, label: "Instagram", href: s.instagram_url },
+    { Icon: Facebook, label: "Facebook", href: s.facebook_url },
+    { Icon: Youtube, label: "YouTube", href: s.youtube_url },
+  ].filter((social) => social.href);
+
   return (
     <footer id="contact" className="relative overflow-hidden bg-ink text-cream">
-      <PawMark className="pointer-events-none absolute -right-16 top-10 h-72 w-72 -rotate-12 text-white/5" />
+      <PawMark className="pointer-events-none absolute -right-20 top-8 h-72 w-72 -rotate-12 text-white/[0.04]" />
 
-      <div className="container-x relative grid gap-12 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr_1.2fr_1.2fr]">
+      <div className="container-x relative grid gap-x-8 gap-y-12 py-16 md:grid-cols-2 md:py-20 lg:grid-cols-[1.6fr_1fr_1.15fr_1.15fr]">
+        {/* Brand + contact */}
         <div>
           <Link to="/" className="flex items-center gap-2.5">
-            <Logo className="h-14 w-14 shrink-0" />
+            {s.logo ? (
+              <img
+                src={`${API}/api/uploads/site/${s.logo}`}
+                alt="K-Petz Hospital"
+                className="h-14 w-14 shrink-0 object-contain"
+              />
+            ) : (
+              <Logo className="h-14 w-14 shrink-0" />
+            )}
             <span className="font-display text-[24px] font-black leading-none tracking-tight">
               K-Petz
               <span className="block text-[10px] font-extrabold uppercase tracking-[0.22em] opacity-70">
@@ -42,37 +78,84 @@ export default function Footer() {
             </span>
           </Link>
 
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-cream/70">
-            We love, care, treat your pets. A full veterinary hospital at Poranki and Gunadala,
-            Vijayawada.
+          <p className="mt-5 max-w-xs text-[15px] leading-relaxed text-cream/70">
+            {s.footer_blurb}
           </p>
 
-          <div className="mt-6 flex gap-3">
-            {[
-              { Icon: Instagram, label: "Instagram" },
-              { Icon: Facebook, label: "Facebook" },
-              { Icon: Youtube, label: "YouTube" },
-            ].map(({ Icon, label }) => (
-              <a
-                key={label}
-                href="/#contact"
-                aria-label={label}
-                className="grid h-11 w-11 place-items-center rounded-full bg-white/10 transition hover:bg-brand"
-              >
-                <Icon className="h-4.5 w-4.5" />
-              </a>
-            ))}
-          </div>
+          <ul className="mt-7 grid gap-3.5">
+            {s.address && (
+              <li className="flex gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                <span className="whitespace-pre-line text-[15px] leading-relaxed text-cream/70">
+                  {s.address}
+                </span>
+              </li>
+            )}
+
+            {(s.phone_primary || s.phone_secondary) && (
+              <li className="flex gap-3">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                <span className="text-[15px] leading-relaxed">
+                  {s.phone_primary && (
+                    <a href={telHref(s.phone_primary)} className={LINK}>
+                      {s.phone_primary}
+                    </a>
+                  )}
+                  {s.phone_primary && s.phone_secondary && (
+                    <span className="text-cream/40"> · </span>
+                  )}
+                  {s.phone_secondary && (
+                    <a href={telHref(s.phone_secondary)} className={LINK}>
+                      {s.phone_secondary}
+                    </a>
+                  )}
+                </span>
+              </li>
+            )}
+
+            {s.email && (
+              <li className="flex gap-3">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                <a href={`mailto:${s.email}`} className={`${LINK} break-all`}>
+                  {s.email}
+                </a>
+              </li>
+            )}
+
+            {s.opening_hours && (
+              <li className="flex gap-3">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                <span className="text-[15px] leading-relaxed text-cream/70">
+                  {s.opening_hours}
+                </span>
+              </li>
+            )}
+          </ul>
+
+          {socials.length > 0 && (
+            <div className="mt-7 flex gap-3">
+              {socials.map(({ Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-gold hover:text-ink"
+                >
+                  <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <nav aria-label="Company">
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-            Company
-          </h2>
-          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
+          <p className={HEADING}>Company</p>
+          <ul className="mt-5 grid gap-3">
             {COMPANY.map(({ label, href }) => (
-              <li key={label}>
-                <a href={href} className="transition hover:text-gold">
+              <li key={href}>
+                <a href={href} className={LINK}>
                   {label}
                 </a>
               </li>
@@ -80,14 +163,12 @@ export default function Footer() {
           </ul>
         </nav>
 
-        <nav aria-label="Legal">
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-            Legal
-          </h2>
-          <ul className="mt-5 grid gap-3 text-[15px] text-cream/75">
-            {LEGAL.map(({ label, to }) => (
-              <li key={label}>
-                <Link to={to} className="transition hover:text-gold">
+        <nav aria-label="Services">
+          <p className={HEADING}>Services</p>
+          <ul className="mt-5 grid gap-3">
+            {SERVICES.map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className={LINK}>
                   {label}
                 </Link>
               </li>
@@ -95,75 +176,31 @@ export default function Footer() {
           </ul>
         </nav>
 
-        <div>
-          <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-            Get in touch
-          </h2>
-          <ul className="mt-5 grid gap-4 text-[15px] text-cream/75">
-            <li className="flex gap-3">
-              <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
-              Near Saibaba Temple, Srinivasa Nagar, Poranki, Vijayawada
-            </li>
-            <li className="flex gap-3">
-              <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
-              <span>
-                <a href="tel:+918019888877" className="hover:text-gold">
-                  80198 88877
-                </a>
-                <br />
-                <a href="tel:+918185048877" className="hover:text-gold">
-                  81850 48877
-                </a>
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <Mail className="mt-0.5 h-4.5 w-4.5 shrink-0 text-gold" aria-hidden="true" />
-              <a href="mailto:kpetzhospital@gmail.com" className="break-all hover:text-gold">
-                kpetzhospital@gmail.com
-              </a>
-            </li>
+        <nav aria-label="Legal">
+          <p className={HEADING}>Legal</p>
+          <ul className="mt-5 grid gap-3">
+            {LEGAL.map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className={LINK}>
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
-
-          <form onSubmit={(e) => e.preventDefault()} className="mt-6">
-            <label htmlFor="news" className="mb-2 block text-sm font-semibold text-cream/70">
-              Monthly care tips, no spam.
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="news"
-                type="email"
-                required
-                placeholder="Your email"
-                className="min-w-0 flex-1 rounded-full border-2 border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-cream outline-none placeholder:text-cream/45 focus:border-brand"
-              />
-              <button className="btn btn-primary px-6">Join</button>
-            </div>
-          </form>
-        </div>
+        </nav>
       </div>
 
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-xs font-semibold text-cream/55 sm:flex-row">
           <p>© {new Date().getFullYear()} K-Petz Hospital. All rights reserved.</p>
-          <p className="flex flex-wrap justify-center gap-5">
-            <Link to="/privacy" className="hover:text-gold">
-              Privacy
-            </Link>
-            <Link to="/terms" className="hover:text-gold">
-              Terms
-            </Link>
-            <Link to="/refunds" className="hover:text-gold">
-              Refunds
-            </Link>
-            <a
-              href={ADMIN_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="opacity-70 hover:text-gold hover:opacity-100"
-            >
-              Staff login
-            </a>
-          </p>
+          <a
+            href={ADMIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-70 transition hover:text-gold hover:opacity-100"
+          >
+            Staff login
+          </a>
         </div>
       </div>
     </footer>

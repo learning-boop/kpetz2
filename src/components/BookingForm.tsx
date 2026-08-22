@@ -1,35 +1,16 @@
 import { useMemo, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import AttachmentPicker from "./AttachmentPicker";
+import UpiPayment from "./UpiPayment";
 
-/** Backend base URL. Set VITE_API_URL in .env — e.g. https://api.kpetzhospital.com */
+/** Backend base URL. Set VITE_API_URL in .env — e.g. https://kpetz.com */
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-/** Razorpay publishable key. Safe in the browser; the SECRET must stay server-side. */
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID ?? "";
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
-/** Injects Razorpay's checkout script once, on demand. */
-function loadRazorpay(): Promise<boolean> {
-  if (window.Razorpay) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
-
 /**
- * Consultation fee shown on the payment step.
+ * Fee shown on the payment step.
  * PLACEHOLDER — replace with the clinic's actual figure before launch.
  */
-const FEE_INR = 500;
+const FEE_INR = 400;
 
 const STEPS = ["Your details", "Your pet", "Appointment", "Terms", "Payment"];
 
@@ -40,23 +21,40 @@ const STATES = [
   "Chhattisgarh", "Uttarakhand", "Himachal Pradesh", "Goa", "Other",
 ];
 
-const SPECIES = ["Dog", "Cat", "Bird", "Rabbit", "Other"];
+const SPECIES = ["Dog", "Cat",  "Other"];
 const SEXES = ["Male", "Female", "Not sure"];
 const VACCINATED = ["Yes", "No", "Not sure"];
 
-/** Services the vet travels for — restricted to the city the clinic covers. */
-const HOME_VISIT = ["Home deworming and vaccination"];
+/**
+ * Services the vet travels for. These are only offered in the clinic's own
+ * city, so the address fields are locked when one is selected.
+ */
+const HOME_VISIT = [
+  "Home visit",
+  "Vaccination at home",
+  "Home treatment",
+  "Deworming",
+];
 const HOME_VISIT_CITY = "Vijayawada";
 const HOME_VISIT_STATE = "Andhra Pradesh";
 
-/** Neutral default. Home-visit services restrict the city, so never default to one. */
+/** Neutral default. Home services restrict the city, so never default to one. */
 const DEFAULT_SERVICE = "Veterinary consultation";
 
 const SERVICES = [
-  "Home deworming and vaccination",
-  "Online consultancy (first aid)", "Second opinion", "Veterinary consultation",
-  "Deworming", "Vaccinations", "Pet surgeries", "Pet hair cut", "Bathing",
-  "Pet boarding", "Other enquiry",
+  "Veterinary consultation",
+  "Online consultancy (first aid)",
+  "Second opinion",
+  "Home visit",
+  "Vaccination at home",
+  "Home treatment",
+  "Deworming",
+  "Vaccinations",
+  "Pet surgeries",
+  "Pet hair cut",
+  "Bathing",
+  "Pet boarding",
+  "Other enquiry",
 ];
 
 const DOCTORS = ["Dr P. Radhika", "Dr K.F.S. Sreekanth", "No preference"];
@@ -72,6 +70,11 @@ const SLOTS = Array.from({ length: 24 }, (_, i) => {
 const LABEL =
   "mb-1.5 block font-display text-[11px] font-extrabold uppercase tracking-[0.14em] text-white";
 
+/** Marks a field as optional, so required ones aren't guessed at. */
+const Optional = () => (
+  <span className="font-semibold normal-case tracking-normal text-white/60"> — optional</span>
+);
+
 type Props = { service?: string; doctor?: string; onSuccess?: () => void };
 
 export default function BookingForm({ service, doctor, onSuccess }: Props) {
@@ -79,8 +82,11 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [cityClash, setCityClash] = useState(false);
   const [data, setData] = useState<Record<string, string>>({});
+  const [utr, setUtr] = useState("");
   const stepRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
+
+  /** Shown on the QR so the clinic can match a payment before the row exists. */
+  const [reference] = useState(() => Math.random().toString(36).slice(2, 10).toUpperCase());
 
   const serviceOptions = useMemo(
     () => (service && !SERVICES.includes(service) ? [service, ...SERVICES] : SERVICES),
@@ -90,19 +96,20 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const [form, setForm] = useState({
     service: service ?? DEFAULT_SERVICE,
     doctor: doctor ?? DOCTORS[2],
+    species: SPECIES[0],
+    sex: SEXES[2],
     vaccinated: VACCINATED[2],
     slot: "",
     agreed: false,
   });
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
-  /** Home visits only cover the clinic's own city, so the address is fixed. */
+  /** Home services only cover the clinic's own city, so the address is fixed. */
   const homeVisit = HOME_VISIT.includes(form.service);
 
   /** Whatever city they gave at step 1, kept in state once that step unmounted. */
   const cityEntered = (data.city ?? "").trim();
 
-  /** Everything typed so far, keyed by field name, for the booking request. */
   /** Reads the fields currently on screen. Called before each step unmounts. */
   const snapshot = () => {
     const found: Record<string, string> = {};
@@ -126,6 +133,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const asFormData = () => {
     const fd = new FormData();
     Object.entries(collect()).forEach(([k, v]) => fd.append(k, v));
+    fd.append("utr", utr);
     files.forEach((f) => fd.append("attachments[]", f));
     return fd;
   };
@@ -137,87 +145,65 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
       if (!field.reportValidity()) return;
     }
     snapshot();
+
     if (step === 2 && !form.slot) {
-      window.alert("Please choose a slot.");
+      window.alert("Please choose a time slot.");
       return;
     }
-    // They may have entered another city at step 1, then picked a home visit here.
-    if (step === 2 && homeVisit && cityEntered && cityEntered.toLowerCase() !== HOME_VISIT_CITY.toLowerCase()) {
+    // They may have entered another city at step 1, then picked a home service here.
+    if (
+      step === 2 &&
+      homeVisit &&
+      cityEntered &&
+      cityEntered.toLowerCase() !== HOME_VISIT_CITY.toLowerCase()
+    ) {
       setCityClash(true);
       return;
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
-  const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   /**
-   * Razorpay in four moves:
-   *   1. the backend creates an order and returns its id (amount set server-side)
-   *   2. checkout opens in the browser with that order id
-   *   3. the backend re-checks the returned signature before trusting anything
-   *   4. Razorpay's webhook confirms it independently, in case the browser closed
-   * Never mark a booking paid from the browser alone — that response is forgeable.
+   * Sends the booking. Payment is by UPI, verified by a human afterwards, so
+   * there is no gateway callback to wait for — this just submits the form.
+   *
+   * The UTR the customer types is a CLAIM, not proof. The server records the
+   * booking as 'claimed' and staff check it against the bank statement.
    */
-  const pay = async () => {
-    setPayError(null);
+  const submit = async () => {
+    setSendError(null);
 
-    if (!API_BASE || !RAZORPAY_KEY) {
-      setPayError("Payments aren't configured yet. Please call the clinic to confirm.");
+    if (!API_BASE) {
+      setSendError("Booking isn't available right now. Please call 80198 88877.");
       return;
     }
 
-    setPaying(true);
+    setSending(true);
     try {
-      const ok = await loadRazorpay();
-      if (!ok) throw new Error("Could not reach the payment provider.");
-
-      const payload = collect();
-
-      // The server decides the amount — never send it from here.
       // No Content-Type header: the browser sets the multipart boundary itself.
       const res = await fetch(`${API_BASE}/api/bookings`, {
         method: "POST",
         body: asFormData(),
       });
-      if (!res.ok) throw new Error("Could not start the payment.");
-      const { orderId, amount, currency, bookingId } = await res.json();
 
-      const rzp = new window.Razorpay!({
-        key: RAZORPAY_KEY,
-        order_id: orderId,
-        amount,
-        currency,
-        name: "K-Petz Hospital",
-        description: form.service,
-        prefill: {
-          name: String(payload.ownerName ?? ""),
-          email: String(payload.email ?? ""),
-          contact: String(payload.phone ?? ""),
-        },
-        theme: { color: "#4a63a8" },
-        handler: async (response: Record<string, string>) => {
-          const verify = await fetch(`${API_BASE}/api/payments/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...response, bookingId }),
-          });
-          if (verify.ok) onSuccess?.();
-          else setPayError("We couldn't confirm the payment. The clinic will call you.");
-        },
-        modal: { ondismiss: () => setPaying(false) },
-      });
-      rzp.open();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message ?? "Could not send your booking. Please try again.");
+      }
+
+      onSuccess?.();
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : "Something went wrong.");
+      setSendError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
-      setPaying(false);
+      setSending(false);
     }
   };
 
   return (
-    <div id="booking" ref={formRef} className="relative scroll-mt-28">
+    <div id="booking" className="relative scroll-mt-28">
       <div className="rounded-[1.75rem] bg-brand p-6 shadow-[0_40px_80px_-40px_rgba(36,28,58,0.8)] sm:p-8">
         <p className="eyebrow text-white/85">Book an appointment</p>
         <h2 className="display-md mt-2 pr-12 text-white">{STEPS[step]}</h2>
@@ -240,45 +226,63 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
         </ol>
         <p className="mt-2 text-xs font-semibold text-white/80">
           Step {step + 1} of {STEPS.length}
+          {step < STEPS.length - 1 && <> · Next: {STEPS[step + 1]}</>}
         </p>
 
         <div ref={stepRef} className="mt-6 grid gap-4">
           {/* 1 — owner */}
           {step === 0 && (
             <>
+              <p className="text-[14px] leading-relaxed text-white/85">
+                So we know who to call back.
+              </p>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>Your name</span>
-                  <input required name="ownerName"
-                  defaultValue={data.ownerName ?? ""} placeholder="Priya Sharma" className="field" />
+                  <input
+                    required
+                    name="ownerName"
+                    defaultValue={data.ownerName ?? ""}
+                    placeholder="Priya Sharma"
+                    className="field"
+                  />
                 </label>
                 <label className="block">
                   <span className={LABEL}>Phone</span>
                   <input
                     required
                     name="phone"
-                  defaultValue={data.phone ?? ""}
+                    defaultValue={data.phone ?? ""}
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9+ ]{10,15}"
-                    title="Enter a valid phone number"
+                    title="Enter a 10-digit mobile number"
                     placeholder="98765 43210"
                     className="field"
                   />
                 </label>
               </div>
+
               <label className="block">
                 <span className={LABEL}>Email</span>
-                <input required name="email"
-                  defaultValue={data.email ?? ""} type="email" placeholder="priya@example.com" className="field" />
+                <input
+                  required
+                  name="email"
+                  defaultValue={data.email ?? ""}
+                  type="email"
+                  placeholder="priya@example.com"
+                  className="field"
+                />
               </label>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>State</span>
                   <select
                     required
                     name="state"
-                    defaultValue={homeVisit ? HOME_VISIT_STATE : "Andhra Pradesh"}
+                    defaultValue={homeVisit ? HOME_VISIT_STATE : data.state ?? "Andhra Pradesh"}
                     disabled={homeVisit}
                     className="field disabled:opacity-70"
                   >
@@ -304,10 +308,11 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   )}
                 </label>
               </div>
+
               {homeVisit && (
-                <p className="text-xs font-semibold text-white/85">
-                  Home visits are available in {HOME_VISIT_CITY} only. For anywhere else, choose a
-                  different service or visit the clinic.
+                <p className="rounded-2xl bg-white/15 px-4 py-3 text-[13px] font-semibold leading-relaxed text-white">
+                  {form.service} is available in {HOME_VISIT_CITY} only. For anywhere else, choose
+                  a different service or visit the clinic.
                 </p>
               )}
             </>
@@ -316,113 +321,151 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
           {/* 2 — pet */}
           {step === 1 && (
             <>
+              <p className="text-[14px] leading-relaxed text-white/85">
+                The more the vet knows before you arrive, the better.
+              </p>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>Pet's name</span>
-                  <input required name="petName"
-                  defaultValue={data.petName ?? ""} placeholder="Tommy" className="field" />
+                  <input
+                    required
+                    name="petName"
+                    defaultValue={data.petName ?? ""}
+                    placeholder="Tommy"
+                    className="field"
+                  />
                 </label>
                 <label className="block">
                   <span className={LABEL}>Species</span>
-                  <select name="species" defaultValue={data.species} className="field">
+                  <select
+                    name="species"
+                    className="field"
+                    value={form.species}
+                    onChange={(e) => set("species", e.target.value)}
+                  >
                     {SPECIES.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </label>
               </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className="block">
                   <span className={LABEL}>Age</span>
-                  <input required name="age"
-                  defaultValue={data.age ?? ""} placeholder="2 years" className="field" />
+                  <input
+                    required
+                    name="age"
+                    defaultValue={data.age ?? ""}
+                    placeholder="2 years"
+                    className="field"
+                  />
                 </label>
                 <label className="block">
-                  <span className={LABEL}>Sex</span>
-                  <select name="sex" defaultValue={data.sex} className="field">
+                  <span className={LABEL}>
+                    Sex<Optional />
+                  </span>
+                  <select
+                    name="sex"
+                    className="field"
+                    value={form.sex}
+                    onChange={(e) => set("sex", e.target.value)}
+                  >
                     {SEXES.map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </label>
                 <label className="block">
-                  <span className={LABEL}>Weight (kg)</span>
-                  <input name="weight"
-                  defaultValue={data.weight ?? ""} type="number" min="0" step="0.1" placeholder="12" className="field" />
+                  <span className={LABEL}>
+                    Weight kg<Optional />
+                  </span>
+                  <input
+                    name="weight"
+                    defaultValue={data.weight ?? ""}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="12"
+                    className="field"
+                  />
                 </label>
               </div>
-              <label className="block">
-                <span className={LABEL}>Breed</span>
-                <input name="breed"
-                  defaultValue={data.breed ?? ""} placeholder="Labrador" className="field" />
-              </label>
-              <label className="block">
-                <span className={LABEL}>Vaccinated?</span>
-                <select
-                  name="vaccinated"
-                  className="field"
-                  value={form.vaccinated}
-                  onChange={(e) => set("vaccinated", e.target.value)}
-                >
-                  {VACCINATED.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className={LABEL}>Last vaccination date</span>
-                <input
-                  name="lastVaccinationDate"
-                  defaultValue={data.lastVaccinationDate ?? ""}
-                  type="date"
-                  max={new Date().toISOString().slice(0, 10)}
-                  className="field"
-                />
-              </label>
-              <label className="block">
-                <span className={LABEL}>Previous vaccination history</span>
-                <textarea
-                  name="vaccinationHistory"
-                  defaultValue={data.vaccinationHistory ?? ""}
-                  rows={3}
-                  placeholder="Which vaccines your pet has had and roughly when — rabies, DHPPi, boosters. Leave blank if none."
-                  className="field !rounded-2xl"
-                />
-              </label>
-              <label className="block">
-                <span className={LABEL}>Photos or a short video (optional)</span>
-                <input
-                  type="file"
-                  name="attachments"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
-                  className="w-full rounded-2xl bg-white/15 px-4 py-3 text-[14px] font-semibold text-white file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-1.5 file:font-display file:text-[12px] file:font-extrabold file:text-ink"
-                />
-                <span className="mt-1.5 block text-xs font-semibold text-white/80">
-                  A clear photo of the problem helps the vet far more than a description. Up to 5
-                  files.
-                </span>
-                {files.length > 0 && (
-                  <ul className="mt-2 grid gap-1 text-xs font-semibold text-white/90">
-                    {files.map((f) => (
-                      <li key={f.name}>• {f.name} ({Math.round(f.size / 1024)} KB)</li>
-                    ))}
-                  </ul>
-                )}
-              </label>
 
               <label className="block">
-                <span className={LABEL}>Describe the problem</span>
+                <span className={LABEL}>
+                  Breed<Optional />
+                </span>
+                <input
+                  name="breed"
+                  defaultValue={data.breed ?? ""}
+                  placeholder="Labrador"
+                  className="field"
+                />
+              </label>
+
+              {/* Vaccination, grouped so step 2 doesn't read as one long column. */}
+              <div className="rounded-2xl bg-white/10 p-4">
+                <p className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-white">
+                  Vaccination
+                </p>
+
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className={LABEL}>Vaccinated?</span>
+                    <select
+                      name="vaccinated"
+                      className="field"
+                      value={form.vaccinated}
+                      onChange={(e) => set("vaccinated", e.target.value)}
+                    >
+                      {VACCINATED.map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className={LABEL}>
+                      Last vaccination<Optional />
+                    </span>
+                    <input
+                      name="lastVaccinationDate"
+                      defaultValue={data.lastVaccinationDate ?? ""}
+                      type="date"
+                      max={new Date().toISOString().slice(0, 10)}
+                      className="field"
+                    />
+                  </label>
+                </div>
+
+                <label className="mt-4 block">
+                  <span className={LABEL}>
+                    Which vaccines, and when<Optional />
+                  </span>
+                  <textarea
+                    name="vaccinationHistory"
+                    defaultValue={data.vaccinationHistory ?? ""}
+                    rows={2}
+                    placeholder="Rabies, DHPPi, boosters — roughly when. Leave blank if none."
+                    className="field !rounded-2xl"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className={LABEL}>What's wrong?</span>
                 <textarea
                   required
                   name="problem"
                   defaultValue={data.problem ?? ""}
                   rows={3}
-                  placeholder="What's wrong, when it started, and anything you've already tried"
+                  placeholder="What you've noticed, when it started, and anything you've already tried"
                   className="field !rounded-2xl"
                 />
               </label>
+
+              <AttachmentPicker files={files} onChange={setFiles} />
             </>
           )}
 
@@ -447,7 +490,9 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   </select>
                 </label>
                 <label className="block">
-                  <span className={LABEL}>Choose a doctor</span>
+                  <span className={LABEL}>
+                    Choose a doctor<Optional />
+                  </span>
                   <select
                     name="doctor"
                     className="field"
@@ -460,6 +505,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   </select>
                 </label>
               </div>
+
               <label className="block">
                 <span className={LABEL}>Preferred date</span>
                 <input
@@ -471,8 +517,9 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   className="field"
                 />
               </label>
+
               <fieldset>
-                <legend className={LABEL}>Choose a slot</legend>
+                <legend className={LABEL}>Choose a time</legend>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {SLOTS.map((time) => (
                     <button
@@ -491,12 +538,16 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   ))}
                 </div>
                 <p className="mt-2.5 text-xs font-semibold text-white/80">
-                  Clinic hours, 9am–9pm. We'll ring you back to confirm the slot.
+                  These are clinic hours, 9am–9pm. We'll ring you back to confirm the time.
                 </p>
               </fieldset>
+
               {cityClash && (
-                <p role="alert" className="rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink">
-                  Home visits are available in {HOME_VISIT_CITY} only, but you entered{" "}
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink"
+                >
+                  {form.service} is available in {HOME_VISIT_CITY} only, but you entered{" "}
                   {cityEntered}. Go back and change the city, or choose a different service.
                 </p>
               )}
@@ -537,6 +588,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   </li>
                 </ol>
               </div>
+
               <label className="flex cursor-pointer items-start gap-3 text-[15px] font-semibold text-white">
                 <input
                   required
@@ -558,7 +610,8 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 {[
                   ["Service", form.service],
                   ["Doctor", form.doctor],
-                  ["Slot", form.slot || "—"],
+                  ["Date", data.date || "—"],
+                  ["Time", form.slot || "—"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4">
                     <dt className="font-semibold text-ink-soft">{k}</dt>
@@ -570,13 +623,24 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   <dd className="font-display text-lg font-black text-ink">₹{FEE_INR}</dd>
                 </div>
               </dl>
+
+              <UpiPayment
+                amountRupees={FEE_INR}
+                reference={reference}
+                utr={utr}
+                onUtrChange={setUtr}
+              />
+
               <p className="text-xs font-semibold text-white/85">
-                You'll be taken to a secure payment page. Your appointment is confirmed once
-                payment succeeds.
+                We'll check the payment and ring you to confirm your appointment.
               </p>
-              {payError && (
-                <p role="alert" className="rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink">
-                  {payError}
+
+              {sendError && (
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink"
+                >
+                  {sendError}
                 </p>
               )}
             </>
@@ -597,6 +661,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               Back
             </button>
           )}
+
           {step < STEPS.length - 1 ? (
             <button
               type="button"
@@ -609,16 +674,16 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
           ) : (
             <button
               type="button"
-              onClick={pay}
-              disabled={paying}
+              onClick={submit}
+              disabled={sending}
               className="btn btn-ink flex-1 gap-2 disabled:opacity-60"
             >
-              {paying ? (
+              {sending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Check className="h-4 w-4" aria-hidden="true" />
               )}
-              {paying ? "Opening payment…" : `Pay ₹${FEE_INR}`}
+              {sending ? "Sending…" : utr ? "I've paid — send booking" : "Send booking"}
             </button>
           )}
         </div>

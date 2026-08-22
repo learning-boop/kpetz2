@@ -1,100 +1,99 @@
 import { Stethoscope } from "lucide-react";
-import drPrimary from "@/assets/doctor1.png";
-import drSecondary from "@/assets/doctor2.png";
 import { PawMark } from "./decor/Decor";
 import Reveal from "./Reveal";
 import { useBooking } from "./BookingProvider";
 
+/**
+ * No photographs here on purpose. The previous version used stock images
+ * alongside the doctors' real names, which reads as though they are the
+ * veterinarians themselves. Initials are honest, and the section works
+ * perfectly well without them.
+ *
+ * Both names and qualifications are from the clinic's own pamphlet.
+ */
 const DOCTORS = [
   {
     name: "Dr P. Radhika",
     role: "Veterinary physician",
-    bio: "Small-animal medicine, diagnostics and preventive care, supported by in-house X-ray, ultrasound scanning and lab facilities.",
     credentials: ["M.V.Sc", "Medicine"],
-    photo: drPrimary,
-    /** Framing for the circular crop — adjust per photo. */
-    focal: "50% 26%",
-    days: "Phone 80198 88877",
+    bio: "Small-animal medicine, diagnostics and preventive care, including vaccination and deworming schedules.",
   },
   {
     name: "Dr K.F.S. Sreekanth",
     role: "Veterinary physician",
-    bio: "Medicine and surgical cases, with a fully equipped operating theatre on site for procedures that need it.",
     credentials: ["M.V.Sc", "Medicine"],
-    photo: drSecondary,
-    focal: "50% 32%",
-    days: "Phone 81850 48877",
+    bio: "Medicine and surgical cases, from routine procedures through to the more complex ones.",
   },
 ];
+
+/** "Dr P. Radhika" -> "PR", so the monogram reads as a person, not a shape. */
+const initials = (name: string) =>
+  name
+    .replace(/^Dr\.?\s+/i, "")
+    .split(/[\s.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 
 export default function Doctors() {
   const { openBooking } = useBooking();
 
   return (
-    <section id="vets" className="section-y relative overflow-hidden bg-cream">
-      <PawMark className="pointer-events-none absolute -left-20 top-24 hidden h-72 w-72 rotate-12 text-sand/55 lg:block" />
-      <PawMark className="pointer-events-none absolute -right-16 bottom-16 hidden h-56 w-56 -rotate-12 text-sand/55 lg:block" />
+    <section id="vets" className="section-y relative overflow-hidden bg-cream-deep">
+      <PawMark className="pointer-events-none absolute -left-20 bottom-0 hidden h-80 w-80 rotate-12 text-white/50 lg:block" />
 
       <div className="container-x relative">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="eyebrow">Meet the vets</p>
-          <h2 className="display-lg mt-5">The Hands Your Pet Is In</h2>
-          <p className="lede mt-5">
-            Two resident veterinary physicians, both M.V.Sc qualified, working with X-ray,
-            ultrasound and a full operating theatre on site.
+          <p className="eyebrow">Our doctors</p>
+          <h2 className="display-lg mt-5">Who You'll Actually See</h2>
+          <p className="lede mx-auto mt-6 max-w-xl">
+            Two resident veterinary physicians, both M.V.Sc qualified. You'll see the same face
+            at each visit.
           </p>
         </Reveal>
 
-        <div className="mx-auto mt-16 grid max-w-4xl gap-14 sm:grid-cols-2 sm:gap-10 lg:gap-16">
+        <div className="mx-auto mt-14 grid max-w-4xl gap-6 md:grid-cols-2">
           {DOCTORS.map((doctor, i) => (
             <Reveal key={doctor.name} delay={i * 120}>
-              <article className="text-center">
-                <div className="relative mx-auto w-fit">
+              <article className="flex h-full flex-col rounded-[1.75rem] bg-cream p-8">
+                <div className="flex items-center gap-4">
                   <span
                     aria-hidden="true"
-                    className="absolute inset-0 translate-x-3 translate-y-3 rounded-full bg-sand"
-                  />
-                  <img
-                    src={doctor.photo}
-                    alt={doctor.name}
-                    width={600}
-                    height={600}
-                    loading="lazy"
-                    style={{ objectPosition: doctor.focal }}
-                    className="relative h-52 w-52 rounded-full object-cover shadow-[0_30px_60px_-35px_rgba(42,39,36,0.75)] ring-8 ring-white md:h-60 md:w-60"
-                  />
-                  <span className="cut-ring absolute bottom-2 right-2 z-10 grid h-14 w-14 place-items-center rounded-full bg-brand text-white">
-                    <Stethoscope className="h-6 w-6" aria-hidden="true" />
+                    className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-brand font-display text-[20px] font-black text-white"
+                  >
+                    {initials(doctor.name)}
                   </span>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-[22px] font-extrabold leading-tight">
+                      {doctor.name}
+                    </h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-ink-soft">
+                      <Stethoscope className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                      {doctor.role}
+                    </p>
+                  </div>
                 </div>
 
-                <h3 className="mt-8 text-[26px]">{doctor.name}</h3>
-                <p className="mt-1.5 font-display text-sm font-extrabold uppercase tracking-[0.14em] text-brand">
-                  {doctor.role}
-                </p>
-
-                <ul className="mt-4 flex flex-wrap justify-center gap-2">
+                <ul className="mt-5 flex flex-wrap gap-2">
                   {doctor.credentials.map((credential) => (
                     <li
                       key={credential}
-                      className="rounded-full bg-cream-deep px-3.5 py-1.5 font-display text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-soft"
+                      className="rounded-full bg-cream-deep px-3 py-1 font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-soft"
                     >
                       {credential}
                     </li>
                   ))}
                 </ul>
 
-                <p className="mt-5 text-[15px] leading-relaxed text-ink-soft">{doctor.bio}</p>
-
-                <p className="mt-5 font-display text-[13px] font-extrabold uppercase tracking-[0.12em] text-ink-soft">
-                  {doctor.days}
-                </p>
+                <p className="mt-5 grow text-[15px] leading-relaxed text-ink-soft">{doctor.bio}</p>
 
                 <button
                   onClick={() => openBooking("Veterinary consultation", doctor.name)}
-                  className="btn btn-ink mt-6"
+                  className="btn btn-outline mt-7 w-full"
                 >
-                  Book with {doctor.name.split(" ").slice(1).join(" ")}
+                  Book with {doctor.name.replace(/^Dr\.?\s+/i, "")}
                 </button>
               </article>
             </Reveal>

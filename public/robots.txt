@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Staff area — no reason for search engines to index it.
+Disallow: /api/
+
+Sitemap: https://kpetz.com/sitemap.xml
