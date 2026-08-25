@@ -1,57 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
-import svcDeworming from "@/assets/svc-deworming.webp";
-import svcVaccination from "@/assets/svc-vaccination.webp";
-import svcHaircut from "@/assets/svc-haircut.webp";
-import svcBathing from "@/assets/svc-bathing.webp";
-import svcBoarding from "@/assets/service-boarding.jpg";
-import svcSurgery from "@/assets/svc-surgery.webp";
 import dogLying from "@/assets/dog-lying.webp";
 import { BoneMark, PawField, Sparkle } from "./decor/Decor";
 import Reveal from "./Reveal";
 import { useBooking } from "./BookingProvider";
-
-const SERVICES = [
-  {
-    img: svcDeworming,
-    title: "Deworming",
-    desc: "Routine deworming to keep worms away, for dogs and cats.",
-    alt: "A veterinarian giving deworming medication to a labrador",
-  },
-  {
-    img: svcVaccination,
-    title: "Vaccinations",
-    desc: "Core vaccinations and boosters, given by a qualified veterinarian.",
-    alt: "A veterinarian vaccinating a golden retriever puppy on a clinic table",
-  },
-  {
-    img: svcSurgery,
-    title: "Pet surgeries",
-    desc: "Soft-tissue and routine surgical procedures in our own operation theatre.",
-    alt: "Two veterinary surgeons operating on a sedated dog in an operating theatre",
-  },
-  {
-    img: svcHaircut,
-    title: "Pet hair cut",
-    desc: "We trim and style your pet based on their breed and comfort.",
-    alt: "A shih tzu being trimmed with scissors on a grooming table",
-  },
-  {
-    img: svcBathing,
-    title: "Bathing",
-    desc: "A warm bath, blow-dry and brush-out using skin-friendly shampoo.",
-    alt: "A small white dog being lathered with shampoo in a grooming bath",
-  },
-  {
-    img: svcBoarding,
-    title: "Pet boarding",
-    desc: "Your pet stays with us, looked after by the same team that treats them.",
-    alt: "A dog resting comfortably in a boarding kennel",
-  },
-];
+import { useContent } from "../data/content";
 
 export default function Services() {
   const { openBooking } = useBooking();
+  // Cards and headline come from the admin (Services and Content pages),
+  // with the built-in six until the API answers.
+  const { servicesHeading, servicesIntro, services } = useContent();
   // Touch devices don't fire :hover on a non-interactive element, so the tapped
   // card is tracked explicitly. Mouse pointers are left to plain :hover.
   const [tapped, setTapped] = useState<number | null>(null);
@@ -89,11 +48,10 @@ export default function Services() {
         <div className="container-x relative">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="eyebrow text-gold">K-Petz care</p>
-            <h2 className="display-lg mt-5 text-white">Excellence In Every Service</h2>
-            <p className="mt-5 text-[17px] leading-relaxed text-cream/75">
-              Everyday care, grooming and surgery — all handled by the same team who know your
-              pet.
-            </p>
+            <h2 className="display-lg mt-5 text-white">{servicesHeading}</h2>
+            {servicesIntro && (
+              <p className="mt-5 text-[17px] leading-relaxed text-cream/75">{servicesIntro}</p>
+            )}
           </Reveal>
 
           {/* Says plainly where to go for all of the above, and links straight
@@ -114,8 +72,8 @@ export default function Services() {
           </div>
 
           <div ref={gridRef} className="mt-8 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((service, i) => (
-              <Reveal key={service.title} delay={(i % 3) * 90}>
+            {services.map((service, i) => (
+              <Reveal key={`${service.title}-${i}`} delay={(i % 3) * 90}>
                 <article
                   onPointerDown={(e) => {
                     if (e.pointerType !== "mouse") setTapped(i);
@@ -124,14 +82,21 @@ export default function Services() {
                   className="group relative h-full rounded-[1.5rem] bg-cream-deep p-3.5 transition-colors duration-300 hover:bg-brand data-[tapped]:bg-brand"
                 >
                   <div className="overflow-hidden rounded-[1.15rem]">
-                    <img
-                      src={service.img}
-                      alt={service.alt}
-                      width={900}
-                      height={675}
-                      loading="lazy"
-                      className="aspect-[4/3] w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
+                    {service.img ? (
+                      <img
+                        src={service.img}
+                        alt={service.alt}
+                        width={900}
+                        height={675}
+                        loading="lazy"
+                        className="aspect-[4/3] w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      /* A card saved without a photo still holds its shape. */
+                      <div className="grid aspect-[4/3] w-full place-items-center bg-sand">
+                        <BoneMark className="h-12 w-24 text-brand/25" />
+                      </div>
+                    )}
                   </div>
 
                   <div className="px-2.5 pb-10 pt-6">
@@ -139,7 +104,7 @@ export default function Services() {
                       {service.title}
                     </h3>
                     <p className="mt-3 pr-12 text-[15px] leading-relaxed text-ink-soft transition-colors duration-300 group-hover:text-white group-data-[tapped]:text-white">
-                      {service.desc}
+                      {service.description}
                     </p>
                   </div>
 

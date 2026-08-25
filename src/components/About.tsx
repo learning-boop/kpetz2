@@ -1,8 +1,8 @@
-import aboutImg from "@/assets/about.jpg";
 import walkImg from "@/assets/dog1.png";
 import dachshund from "@/assets/dachshund.webp";
 import { BadgeStamp, BoneMark, PawMark, PlayButton, Signature } from "./decor/Decor";
 import Reveal from "./Reveal";
+import { useContent } from "../data/content";
 
 /**
  * Every figure here is verifiable: the rating and review count come from the
@@ -13,6 +13,11 @@ import Reveal from "./Reveal";
 
 
 export default function About() {
+  // Heading, quote, text and the portrait come from the admin's Content
+  // page, with the built-in copy until the API answers.
+  const { about } = useContent();
+  const paragraphs = about.body.split(/\n\s*\n/).filter((p) => p.trim() !== "");
+
   return (
     <section id="about" className="section-y relative overflow-hidden bg-cream">
       <PawMark className="pointer-events-none absolute left-[44%] top-8 hidden h-[300px] w-[300px] text-sand/55 lg:block" />
@@ -22,9 +27,7 @@ export default function About() {
         {/* Heading */}
         <Reveal className="lg:col-start-1 lg:col-end-9 lg:row-start-1">
           <p className="eyebrow">Know us</p>
-          <h2 className="display-lg mt-5 max-w-[15ch]">
-            Every Pet Treated Like Our Own
-          </h2>
+          <h2 className="display-lg mt-5 max-w-[15ch]">{about.heading}</h2>
         </Reveal>
 
         {/* Portrait + copy */}
@@ -32,7 +35,7 @@ export default function About() {
           <Reveal className="relative">
             <BadgeStamp className="absolute left-0 top-0 z-10 h-24 w-24 md:h-28 md:w-28" />
             <img
-              src={aboutImg}
+              src={about.img}
               alt="A pet owner holding her dog"
               width={1200}
               height={1400}
@@ -42,19 +45,16 @@ export default function About() {
           </Reveal>
 
           <Reveal delay={120} className="relative">
-            <p className="font-display text-[22px] font-extrabold leading-snug text-brand md:text-[26px]">
-              “A full pet hospital in Vijayawada — not just a clinic.”
-            </p>
-            <p className="lede mt-5">
-              K-Petz Hospital has X-ray, ultrasound scanning, an operation theatre and its own lab,
-              so most cases can be diagnosed and treated in one visit instead of being sent
-              elsewhere.
-            </p>
-            <p className="lede mt-4">
-              Two M.V.Sc qualified veterinarians look after dogs, cats. from routine
-              vaccination and deworming through to surgery. You'll find us at Poranki, behind
-              Saibaba Temple, and at Gunadala opposite APGenco.
-            </p>
+            {about.quote && (
+              <p className="font-display text-[22px] font-extrabold leading-snug text-brand md:text-[26px]">
+                {about.quote}
+              </p>
+            )}
+            {paragraphs.map((paragraph, i) => (
+              <p key={i} className={i === 0 && !about.quote ? "lede" : i === 0 ? "lede mt-5" : "lede mt-4"}>
+                {paragraph}
+              </p>
+            ))}
 
             
 
