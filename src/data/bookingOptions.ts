@@ -23,6 +23,8 @@ import { DOCTORS, GST_RATE, SERVICES, type ServiceConfig, type ServiceKey, type 
 export type BookingOptions = {
   gstRate: number;
   services: Partial<Record<ServiceKey, ServiceConfig>>;
+  /** How many pets one booking may cover. The server refuses more. */
+  maxPets: number;
   homeService: { state: string; city: string };
   onlineStates: string[];
   doctors: string[];
@@ -34,6 +36,7 @@ export type BookingOptions = {
 export const FALLBACK_OPTIONS: BookingOptions = {
   gstRate: GST_RATE,
   services: SERVICES,
+  maxPets: 5,
   homeService: { state: HOME_SERVICE_STATE, city: HOME_SERVICE_CITY },
   onlineStates: ONLINE_SERVICE_STATES,
   doctors: DOCTORS,
@@ -91,6 +94,12 @@ const merge = (raw: unknown): BookingOptions => {
     typeof data.homeService.city === "string"
   ) {
     out.homeService = data.homeService;
+  }
+
+  // A cap the form can't honour is worse than the bundled one: it would let
+  // someone add a sixth pet only for the server to refuse the whole booking.
+  if (typeof data.maxPets === "number" && Number.isInteger(data.maxPets) && data.maxPets >= 1) {
+    out.maxPets = data.maxPets;
   }
 
   if (isList(data.onlineStates)) out.onlineStates = data.onlineStates;

@@ -40,15 +40,49 @@ const Optional = () => (
 
 type Props = { service?: string; doctor?: string; onSuccess?: () => void };
 
+/**
+ * One animal. A household books once for all of its pets, and each is
+ * described in full — ages, breeds and vaccination histories differ, and the
+ * vet needs all of them before the visit.
+ *
+ * Every field is held here rather than read off the DOM, because pets can be
+ * removed from the middle of the list: with uncontrolled inputs, deleting the
+ * first of three would leave the remaining two showing the wrong names.
+ */
+type PetState = {
+  petName: string;
+  species: string;
+  breed: string;
+  age: string;
+  sex: string;
+  weight: string;
+  vaccinationType: string;
+  vaccinationHistory: string;
+  lastVaccinationDate: string;
+};
+
+const emptyPet = (species: string): PetState => ({
+  petName: "",
+  species,
+  breed: "",
+  age: "",
+  sex: "",
+  weight: "",
+  vaccinationType: "first",
+  vaccinationHistory: "",
+  lastVaccinationDate: "",
+});
+
+/** The field name the server reads this pet's answer from. */
+const petField = (index: number, name: keyof PetState) => `pets[${index}][${name}]`;
+
 type FormState = {
   /** Empty until a service is chosen — everything else depends on it. */
   serviceKey: ServiceKey | "";
-  species: string;
-  breed: string;
-  sex: string;
+  /** Always at least one. The price is this many times the service price. */
+  pets: PetState[];
   state: string;
   city: string;
-  vaccinationType: string;
   /** Online only: which vet, and the date and time they're free. */
   doctor: string;
   date: string;
@@ -71,11 +105,16 @@ function reconcile(f: FormState, o: BookingOptions): FormState {
   if (!config) return { ...f, serviceKey: "" };
 
   const speciesList = o.species[config.kind];
-  const species = speciesList.includes(f.species) ? f.species : speciesList[0];
 
-  // A dropdown for any species with a list, so the value must come from it.
-  const breedList = o.breeds[species] ?? [];
-  const breed = breedList.includes(f.breed) ? f.breed : (breedList[0] ?? "");
+  // Each pet's species has to be one this service covers (a home visit is
+  // dogs and cats only), and its breed one from that species' list. Pets
+  // beyond the cap are dropped rather than sent for the server to refuse.
+  const pets = f.pets.slice(0, Math.max(1, o.maxPets)).map((pet) => {
+    const species = speciesList.includes(pet.species) ? pet.species : speciesList[0];
+    const breedList = o.breeds[species] ?? [];
+    const breed = breedList.includes(pet.breed) ? pet.breed : (breedList[0] ?? "");
+    return { ...pet, species, breed };
+  });
 
   const rules = FIELD_RULES[config.kind];
   const doctor = rules.doctor && o.doctors.includes(f.doctor) ? f.doctor : "";
@@ -92,8 +131,7 @@ function reconcile(f: FormState, o: BookingOptions): FormState {
 
   return {
     ...f,
-    species,
-    breed,
+    pets,
     state,
     city,
     doctor,
@@ -120,12 +158,9 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     reconcile(
       {
         serviceKey: resolveServiceKey(service, options.services) ?? "",
-        species: "Dog",
-        breed: "",
-        sex: "",
+        pets: [emptyPet("Dog")],
         state: homeService.state,
         city: homeService.city,
-        vaccinationType: "first",
         doctor: doctor ?? "",
         date: "",
         slot: "",
@@ -148,6 +183,27 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
 
   const set = (k: keyof FormState, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
+  /** Changes one pet. Species changes clear the breed, which reconcile refills. */
+  const setPet = (index: number, patch: Partial<PetState>) =>
+    setForm((f) =>
+      reconcile(
+        { ...f, pets: f.pets.map((pet, i) => (i === index ? { ...pet, ...patch } : pet)) },
+        options,
+      ),
+    );
+
+  // A second pet starts as a copy of the first's species — households tend to
+  // have another of the same, and it's one less dropdown to set.
+  const addPet = () =>
+    setForm((f) =>
+      f.pets.length >= options.maxPets
+        ? f
+        : { ...f, pets: [...f.pets, emptyPet(f.pets[0]?.species ?? "Dog")] },
+    );
+
+  const removePet = (index: number) =>
+    setForm((f) => (f.pets.length < 2 ? f : { ...f, pets: f.pets.filter((_, i) => i !== index) }));
+
   const config = form.serviceKey ? services[form.serviceKey] : undefined;
   const rules = config ? FIELD_RULES[config.kind] : undefined;
   const homeVisit = config?.kind === "home";
@@ -162,7 +218,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const states = homeVisit ? [homeService.state] : onlineStates;
   const cities = homeVisit ? [homeService.city] : (citiesByState[form.state] ?? []);
   const speciesList = config ? speciesByKind[config.kind] : speciesByKind.home;
-  const breedList = breeds[form.species] ?? [];
+  const petCount = form.pets.length;
 
   /**
    * Times already taken, fetched once per date and kept for the life of the
@@ -209,16 +265,16 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     set("slot", time);
   };
 
+  // The price is per pet: three dogs on one home visit is three lots of
+  // medicine and three vaccines, so it is three times the price.
   const rate = options.gstRate;
-  const base = config?.price ?? 0;
+  const unit = config?.price ?? 0;
+  const base = unit * petCount;
   const gst = gstOn(base, rate);
   const total = totalWithGst(base, rate);
 
   const changeService = (key: ServiceKey) =>
     setForm((f) => reconcile({ ...f, serviceKey: key }, options));
-
-  const changeSpecies = (species: string) =>
-    setForm((f) => reconcile({ ...f, species, breed: "" }, options));
 
   const changeState = (state: string) =>
     setForm((f) => ({ ...f, state, city: citiesByState[state]?.[0] ?? "" }));
@@ -243,23 +299,31 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     merged.service = serviceLabel;
     merged.state = form.state;
     merged.city = form.city;
-    merged.species = form.species;
-    merged.sex = form.sex;
     merged.agreed = String(form.agreed);
 
     // Only send what this service actually asked for, so the server isn't
     // storing a doctor for a home visit or a slot for a date-only booking.
-    merged.breed = breedList.length ? form.breed : (data.breed ?? "");
     merged.doctor = rules.doctor ? form.doctor : "";
     merged.date = form.date;
     merged.slot = rules.timeSlot ? form.slot : "";
-    merged.vaccinationType = askVaccination ? form.vaccinationType : "";
 
     if (!rules.problem) merged.problem = "";
-    if (!askVaccination || form.vaccinationType === "first") {
-      merged.lastVaccinationDate = "";
-      merged.vaccinationHistory = "";
-    }
+
+    // pets[0][petName], pets[1][species] … — PHP reads that as a list, so the
+    // server validates and stores every pet the same way.
+    form.pets.forEach((pet, i) => {
+      const annual = askVaccination && pet.vaccinationType === "annual";
+
+      merged[petField(i, "petName")] = pet.petName;
+      merged[petField(i, "species")] = pet.species;
+      merged[petField(i, "breed")] = pet.breed;
+      merged[petField(i, "age")] = pet.age;
+      merged[petField(i, "sex")] = pet.sex;
+      merged[petField(i, "weight")] = pet.weight;
+      merged[petField(i, "vaccinationType")] = askVaccination ? pet.vaccinationType : "";
+      merged[petField(i, "vaccinationHistory")] = annual ? pet.vaccinationHistory : "";
+      merged[petField(i, "lastVaccinationDate")] = annual ? pet.lastVaccinationDate : "";
+    });
 
     // The total as displayed, so a page left open across a price change is
     // refused rather than charged the wrong amount. The server sets the price.
@@ -400,18 +464,6 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 </select>
               </label>
 
-              {config && (
-                <p className="rounded-2xl bg-white/15 px-4 py-3 text-[13px] font-semibold leading-relaxed text-white">
-                  {serviceLabel} — ₹{base}
-                  {gst > 0 && <> + ₹{gst} GST = ₹{total}</>}
-                  {homeVisit
-                    ? `. A veterinarian visits your home in ${homeService.city}.`
-                    : ". By video or phone, from anywhere in Andhra Pradesh or Telangana."}
-                </p>
-              )}
-
-              <p className="text-[14px] leading-relaxed text-white/85">So we know who to call back.</p>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className={LABEL}>Your name</span>
@@ -501,165 +553,214 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
           {/* 2 — pet */}
           {step === 1 && config && rules && (
             <>
-              <p className="text-[14px] leading-relaxed text-white/85">
-                The more the vet knows before the {homeVisit ? "visit" : "call"}, the better.
-              </p>
+              {form.pets.map((pet, i) => {
+                const breedList = breeds[pet.species] ?? [];
+                const annual = askVaccination && pet.vaccinationType === "annual";
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className={LABEL}>Pet's name</span>
-                  <input
-                    required
-                    name="petName"
-                    defaultValue={data.petName ?? ""}
-                    placeholder="Tommy"
-                    className="field"
-                  />
-                </label>
-                <label className="block">
-                  <span className={LABEL}>Species</span>
-                  <select
-                    required
-                    className="field"
-                    value={form.species}
-                    onChange={(e) => changeSpecies(e.target.value)}
+                return (
+                  <div
+                    key={i}
+                    className={
+                      i === 0
+                        ? "grid gap-4"
+                        : "grid gap-4 rounded-2xl border border-white/15 bg-white/[0.06] p-4"
+                    }
                   >
-                    {speciesList.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+                    {/* Numbered only once there is more than one — a single
+                        pet shouldn't be labelled "Pet 1". */}
+                    {form.pets.length > 1 && (
+                      <div className="flex items-center justify-between">
+                        <p className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-white">
+                          Pet {i + 1}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => removePet(i)}
+                          className="text-[13px] font-semibold text-white/70 underline underline-offset-4 transition hover:text-white"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
 
-              {/* Dogs and cats pick from the list — the server rejects
-                  anything else. Other animals get a free, optional box. */}
-              {breedList.length ? (
-                <label className="block">
-                  <span className={LABEL}>{form.species} breed</span>
-                  <select
-                    required
-                    className="field"
-                    value={form.breed}
-                    onChange={(e) => set("breed", e.target.value)}
-                  >
-                    {breedList.map((b) => (
-                      <option key={b}>{b}</option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <label className="block">
-                  <span className={LABEL}>
-                    Breed<Optional />
-                  </span>
-                  <input
-                    name="breed"
-                    defaultValue={data.breed ?? ""}
-                    placeholder="Budgie, Lop, and so on"
-                    className="field"
-                  />
-                </label>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <label className="block">
-                  <span className={LABEL}>Age</span>
-                  <input
-                    required
-                    name="age"
-                    defaultValue={data.age ?? ""}
-                    placeholder="2 years"
-                    className="field"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className={LABEL}>Sex</span>
-                  <select
-                    required
-                    className="field"
-                    value={form.sex}
-                    onChange={(e) => set("sex", e.target.value)}
-                  >
-                    {/* Empty default so nobody is silently recorded as Male. */}
-                    <option value="" disabled>
-                      Choose
-                    </option>
-                    {SEXES.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className={LABEL}>
-                    Weight kg<Optional />
-                  </span>
-                  <input
-                    name="weight"
-                    defaultValue={data.weight ?? ""}
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="12"
-                    className="field"
-                  />
-                </label>
-              </div>
-
-              {askVaccination && (
-                <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-white">
-                    Vaccination history
-                  </p>
-
-                  <div className="mt-3 grid gap-2">
-                    {VACCINATION_TYPES.map(({ value, label }) => (
-                      <label
-                        key={value}
-                        className="flex cursor-pointer items-center gap-3 rounded-xl bg-white/10 px-4 py-3 text-[15px] font-semibold text-white transition hover:bg-white/20"
-                      >
-                        <input
-                          type="radio"
-                          name="vaccinationType"
-                          value={value}
-                          checked={form.vaccinationType === value}
-                          onChange={() => set("vaccinationType", value)}
-                          className="h-4 w-4 accent-ink"
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-
-                  {/* Previous-vaccine details only make sense for a booster. */}
-                  {form.vaccinationType === "annual" && (
-                    <div className="mt-4 grid gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
-                        <span className={LABEL}>Which vaccine was given last time?</span>
+                        <span className={LABEL}>Pet's name</span>
                         <input
                           required
-                          name="vaccinationHistory"
-                          defaultValue={data.vaccinationHistory ?? ""}
-                          placeholder="Rabies, DHPPi, or whatever was given"
+                          value={pet.petName}
+                          onChange={(e) => setPet(i, { petName: e.target.value })}
+                          placeholder="Tommy"
                           className="field"
                         />
                       </label>
                       <label className="block">
+                        <span className={LABEL}>Species</span>
+                        <select
+                          required
+                          className="field"
+                          value={pet.species}
+                          onChange={(e) => setPet(i, { species: e.target.value, breed: "" })}
+                        >
+                          {speciesList.map((s) => (
+                            <option key={s}>{s}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    {/* Dogs and cats pick from the list — the server rejects
+                        anything else. Other animals get a free, optional box. */}
+                    {breedList.length ? (
+                      <label className="block">
+                        <span className={LABEL}>{pet.species} breed</span>
+                        <select
+                          required
+                          className="field"
+                          value={pet.breed}
+                          onChange={(e) => setPet(i, { breed: e.target.value })}
+                        >
+                          {breedList.map((b) => (
+                            <option key={b}>{b}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <label className="block">
                         <span className={LABEL}>
-                          When was the last one?<Optional />
+                          Breed<Optional />
                         </span>
                         <input
-                          name="lastVaccinationDate"
-                          defaultValue={data.lastVaccinationDate ?? ""}
-                          type="date"
-                          max={new Date().toISOString().slice(0, 10)}
+                          value={pet.breed}
+                          onChange={(e) => setPet(i, { breed: e.target.value })}
+                          placeholder="Budgie, Lop, and so on"
+                          className="field"
+                        />
+                      </label>
+                    )}
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <label className="block">
+                        <span className={LABEL}>Age</span>
+                        <input
+                          required
+                          value={pet.age}
+                          onChange={(e) => setPet(i, { age: e.target.value })}
+                          placeholder="2 years"
+                          className="field"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className={LABEL}>Sex</span>
+                        <select
+                          required
+                          className="field"
+                          value={pet.sex}
+                          onChange={(e) => setPet(i, { sex: e.target.value })}
+                        >
+                          {/* Empty default so nobody is silently recorded as Male. */}
+                          <option value="" disabled>
+                            Choose
+                          </option>
+                          {SEXES.map((s) => (
+                            <option key={s}>{s}</option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="block">
+                        <span className={LABEL}>
+                          Weight kg<Optional />
+                        </span>
+                        <input
+                          value={pet.weight}
+                          onChange={(e) => setPet(i, { weight: e.target.value })}
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="12"
                           className="field"
                         />
                       </label>
                     </div>
-                  )}
-                </div>
+
+                    {askVaccination && (
+                      <div className="rounded-2xl bg-white/10 p-4">
+                        <p className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-white">
+                          Vaccination history
+                        </p>
+
+                        <div className="mt-3 grid gap-2">
+                          {VACCINATION_TYPES.map(({ value, label }) => (
+                            <label
+                              key={value}
+                              className="flex cursor-pointer items-center gap-3 rounded-xl bg-white/10 px-4 py-3 text-[15px] font-semibold text-white transition hover:bg-white/20"
+                            >
+                              <input
+                                type="radio"
+                                // Each pet needs its own radio group, or
+                                // answering for one would clear the others.
+                                name={petField(i, "vaccinationType")}
+                                value={value}
+                                checked={pet.vaccinationType === value}
+                                onChange={() => setPet(i, { vaccinationType: value })}
+                                className="h-4 w-4 accent-ink"
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Previous-vaccine details only make sense for a booster. */}
+                        {annual && (
+                          <div className="mt-4 grid gap-4">
+                            <label className="block">
+                              <span className={LABEL}>Which vaccine was given last time?</span>
+                              <input
+                                required
+                                value={pet.vaccinationHistory}
+                                onChange={(e) => setPet(i, { vaccinationHistory: e.target.value })}
+                                placeholder="Rabies, DHPPi, or whatever was given"
+                                className="field"
+                              />
+                            </label>
+                            <label className="block">
+                              <span className={LABEL}>
+                                When was the last one?<Optional />
+                              </span>
+                              <input
+                                value={pet.lastVaccinationDate}
+                                onChange={(e) => setPet(i, { lastVaccinationDate: e.target.value })}
+                                type="date"
+                                max={new Date().toISOString().slice(0, 10)}
+                                className="field"
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* The price follows the count, so the button says what the next
+                  pet costs rather than leaving it to be discovered at the
+                  payment step. */}
+              {petCount < options.maxPets ? (
+                <button
+                  type="button"
+                  onClick={addPet}
+                  className="rounded-2xl border border-dashed border-white/35 px-4 py-3 text-[15px] font-semibold text-white transition hover:border-white/60 hover:bg-white/10"
+                >
+                  + Add another pet{unit > 0 ? ` · ₹${unit} more` : ""}
+                </button>
+              ) : (
+                <p className="text-[13px] text-white/70">
+                  One booking covers up to {options.maxPets} pets. Please book any others
+                  separately.
+                </p>
               )}
 
               {rules.problem && (
@@ -829,7 +930,12 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
               <dl className="grid gap-2 rounded-2xl bg-white p-5 text-[15px]">
                 {[
                   ["Service", serviceLabel],
-                  ["Pet", [data.petName, form.species, breedForSummary(breedList.length > 0, form.breed, data.breed)].filter(Boolean).join(" · ")],
+                  // A row each, so a three-pet booking is read back in full
+                  // before it is paid for.
+                  ...form.pets.map((pet, i) => [
+                    petCount === 1 ? "Pet" : `Pet ${i + 1}`,
+                    [pet.petName, pet.species, pet.breed].filter(Boolean).join(" · "),
+                  ]),
                   ...(rules.doctor ? [["Doctor", form.doctor]] : []),
                   ["Date", prettyDate(form.date)],
                   ...(rules.timeSlot ? [["Time", form.slot || "—"]] : []),
@@ -843,7 +949,11 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
 
                 <div className="mt-2 grid gap-1.5 border-t border-line pt-3">
                   <div className="flex justify-between gap-4">
-                    <dt className="text-ink-soft">Service fee</dt>
+                    {/* The multiplication is spelled out, so the total reads
+                        as arithmetic rather than a surprise. */}
+                    <dt className="text-ink-soft">
+                      Service fee{petCount > 1 && <> · ₹{unit} × {petCount} pets</>}
+                    </dt>
                     <dd className="font-semibold text-ink">₹{base}</dd>
                   </div>
                   {gst > 0 && (
@@ -934,7 +1044,3 @@ const prettyDate = (iso: string | undefined) => {
     ? iso
     : date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 };
-
-/** The breed as it will be sent: the list choice for a home visit, the typed text otherwise. */
-const breedForSummary = (fromList: boolean, listed: string, typed: string | undefined) =>
-  fromList ? listed : (typed ?? "");
