@@ -20,11 +20,29 @@ import { DOCTORS, GST_RATE, SERVICES, type ServiceConfig, type ServiceKey, type 
  * the API responds, and kept if it never does, so the form opens complete on
  * first paint and simply corrects itself if the clinic has changed something.
  */
+/** One row of the clinic's vaccine list, as the admin keeps it. */
+export type VaccineOption = {
+  id: number;
+  /** MSD, Zoetis — the form groups the dropdown by this. */
+  brand: string;
+  name: string;
+  /** Rupees per pet, before GST. */
+  price: number;
+};
+
 export type BookingOptions = {
   gstRate: number;
   services: Partial<Record<ServiceKey, ServiceConfig>>;
   /** How many pets one booking may cover. The server refuses more. */
   maxPets: number;
+  /**
+   * What can be given on a home vaccination visit. Empty until the API
+   * answers: there is no sensible built-in copy of a price list the clinic
+   * edits, and offering a stale price would be worse than offering none.
+   */
+  vaccines: VaccineOption[];
+  /** Shown under the vaccine list for owners who don't know which is due. */
+  vaccineGuidance: string;
   homeService: { state: string; city: string };
   onlineStates: string[];
   doctors: string[];
@@ -37,6 +55,8 @@ export const FALLBACK_OPTIONS: BookingOptions = {
   gstRate: GST_RATE,
   services: SERVICES,
   maxPets: 5,
+  vaccines: [],
+  vaccineGuidance: "",
   homeService: { state: HOME_SERVICE_STATE, city: HOME_SERVICE_CITY },
   onlineStates: ONLINE_SERVICE_STATES,
   doctors: DOCTORS,
@@ -101,6 +121,23 @@ const merge = (raw: unknown): BookingOptions => {
   if (typeof data.maxPets === "number" && Number.isInteger(data.maxPets) && data.maxPets >= 1) {
     out.maxPets = data.maxPets;
   }
+
+  // Only rows with everything the dropdown needs. A half-written vaccine is
+  // dropped rather than shown priced at nothing.
+  if (Array.isArray(data.vaccines)) {
+    out.vaccines = (data.vaccines as unknown[]).filter(
+      (v): v is VaccineOption =>
+        !!v &&
+        typeof v === "object" &&
+        typeof (v as VaccineOption).id === "number" &&
+        typeof (v as VaccineOption).brand === "string" &&
+        typeof (v as VaccineOption).name === "string" &&
+        typeof (v as VaccineOption).price === "number" &&
+        (v as VaccineOption).price >= 0,
+    );
+  }
+
+  if (typeof data.vaccineGuidance === "string") out.vaccineGuidance = data.vaccineGuidance;
 
   if (isList(data.onlineStates)) out.onlineStates = data.onlineStates;
   if (isList(data.doctors)) out.doctors = data.doctors;

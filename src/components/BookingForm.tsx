@@ -59,6 +59,8 @@ type PetState = {
   vaccinationType: string;
   vaccinationHistory: string;
   lastVaccinationDate: string;
+  /** The chosen vaccine's id, as a string because a <select> value is one. */
+  vaccineId: string;
 };
 
 const emptyPet = (species: string): PetState => ({
@@ -71,6 +73,7 @@ const emptyPet = (species: string): PetState => ({
   vaccinationType: "first",
   vaccinationHistory: "",
   lastVaccinationDate: "",
+  vaccineId: "",
 });
 
 /** The field name the server reads this pet's answer from. */
@@ -113,7 +116,13 @@ function reconcile(f: FormState, o: BookingOptions): FormState {
     const species = speciesList.includes(pet.species) ? pet.species : speciesList[0];
     const breedList = o.breeds[species] ?? [];
     const breed = breedList.includes(pet.breed) ? pet.breed : (breedList[0] ?? "");
-    return { ...pet, species, breed };
+
+    // A vaccine the clinic has since removed from its list, or one chosen
+    // before the list arrived, is cleared so the customer picks again rather
+    // than being quoted for something that no longer exists.
+    const vaccineId = o.vaccines.some((v) => String(v.id) === pet.vaccineId) ? pet.vaccineId : "";
+
+    return { ...pet, species, breed, vaccineId };
   });
 
   const rules = FIELD_RULES[config.kind];
@@ -220,6 +229,14 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   const speciesList = config ? speciesByKind[config.kind] : speciesByKind.home;
   const petCount = form.pets.length;
 
+  // Vaccines are only asked for by a service that gives one, and only once
+  // the clinic's list has arrived from the API.
+  const { vaccines, vaccineGuidance } = options;
+  const askVaccine = askVaccination && vaccines.length > 0;
+  const vaccineBrands = Array.from(new Set(vaccines.map((v) => v.brand)));
+  const priceOf = (vaccineId: string) =>
+    vaccines.find((v) => String(v.id) === vaccineId)?.price ?? 0;
+
   /**
    * Times already taken, fetched once per date and kept for the life of the
    * form. Greying them out is a courtesy; the server refuses a clash too,
@@ -256,6 +273,13 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     }
   }, [form.slot, form.doctor, takenSlots]);
 
+  // Someone can attach photos to an online consultation and then switch to a
+  // home visit, which doesn't ask for any. Dropping them here stops files the
+  // customer can no longer see from travelling with the booking.
+  useEffect(() => {
+    if (rules && ! rules.problem && files.length) setFiles([]);
+  }, [rules, files.length]);
+
   const chooseSlot = (time: string) => {
     if (takenSlots.includes(time)) {
       setSlotWarning(`${form.doctor} is not available at ${time}. Please choose another time.`);
@@ -265,11 +289,15 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
     set("slot", time);
   };
 
-  // The price is per pet: three dogs on one home visit is three lots of
-  // medicine and three vaccines, so it is three times the price.
+  // The visit is charged per pet, and each pet's vaccine on top. GST applies
+  // to the two together, which is the figure the customer pays.
   const rate = options.gstRate;
   const unit = config?.price ?? 0;
-  const base = unit * petCount;
+  const visitFee = unit * petCount;
+  const vaccineTotal = askVaccine
+    ? form.pets.reduce((sum, pet) => sum + priceOf(pet.vaccineId), 0)
+    : 0;
+  const base = visitFee + vaccineTotal;
   const gst = gstOn(base, rate);
   const total = totalWithGst(base, rate);
 
@@ -323,6 +351,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
       merged[petField(i, "vaccinationType")] = askVaccination ? pet.vaccinationType : "";
       merged[petField(i, "vaccinationHistory")] = annual ? pet.vaccinationHistory : "";
       merged[petField(i, "lastVaccinationDate")] = annual ? pet.lastVaccinationDate : "";
+      merged[petField(i, "vaccineId")] = askVaccine ? pet.vaccineId : "";
     });
 
     // The total as displayed, so a page left open across a price change is
@@ -685,6 +714,46 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                       </label>
                     </div>
 
+                    {/* Which vaccine this pet is getting. Priced per pet, so
+                        two dogs at different stages of the course are charged
+                        for what each of them actually needs. */}
+                    {askVaccine && (
+                      <div className="grid gap-2">
+                        <label className="block">
+                          <span className={LABEL}>Vaccine</span>
+                          <select
+                            required
+                            className="field"
+                            value={pet.vaccineId}
+                            onChange={(e) => setPet(i, { vaccineId: e.target.value })}
+                          >
+                            <option value="" disabled>
+                              Choose a vaccine
+                            </option>
+                            {vaccineBrands.map((brand) => (
+                              <optgroup key={brand} label={brand}>
+                                {vaccines
+                                  .filter((v) => v.brand === brand)
+                                  .map((v) => (
+                                    <option key={v.id} value={String(v.id)}>
+                                      {v.name} — ₹{v.price}
+                                    </option>
+                                  ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </label>
+
+                        {/* The clinic's advice, edited in the admin. Shown
+                            once, under the first pet, not repeated per pet. */}
+                        {i === 0 && vaccineGuidance && (
+                          <p className="whitespace-pre-line rounded-xl bg-white/10 px-4 py-3 text-[13px] leading-relaxed text-white/90">
+                            {vaccineGuidance}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {askVaccination && (
                       <div className="rounded-2xl bg-white/10 p-4">
                         <p className="font-display text-[12px] font-extrabold uppercase tracking-[0.14em] text-white">
@@ -754,7 +823,9 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   onClick={addPet}
                   className="rounded-2xl border border-dashed border-white/35 px-4 py-3 text-[15px] font-semibold text-white transition hover:border-white/60 hover:bg-white/10"
                 >
-                  + Add another pet{unit > 0 ? ` · ₹${unit} more` : ""}
+                  {/* With vaccines in play the cost of another pet depends on
+                      which one it needs, so only the flat case names a price. */}
+                  + Add another pet{!askVaccine && unit > 0 ? ` · ₹${unit} more` : ""}
                 </button>
               ) : (
                 <p className="text-[13px] text-white/70">
@@ -777,7 +848,11 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                 </label>
               )}
 
-              <AttachmentPicker files={files} onChange={setFiles} />
+              {/* Photos and videos belong to a service that asks what's wrong:
+                  the vet looks at them before the call. A home deworming and
+                  vaccination visit doesn't ask, so there is nothing for an
+                  attachment to illustrate. */}
+              {rules.problem && <AttachmentPicker files={files} onChange={setFiles} />}
             </>
           )}
 
@@ -934,7 +1009,18 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   // before it is paid for.
                   ...form.pets.map((pet, i) => [
                     petCount === 1 ? "Pet" : `Pet ${i + 1}`,
-                    [pet.petName, pet.species, pet.breed].filter(Boolean).join(" · "),
+                    [
+                      pet.petName,
+                      pet.species,
+                      pet.breed,
+                      // The vaccine is part of what they're paying for, so it
+                      // is read back before the payment step, not after.
+                      askVaccine
+                        ? vaccines.find((v) => String(v.id) === pet.vaccineId)?.name
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · "),
                   ]),
                   ...(rules.doctor ? [["Doctor", form.doctor]] : []),
                   ["Date", prettyDate(form.date)],
@@ -952,10 +1038,19 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                     {/* The multiplication is spelled out, so the total reads
                         as arithmetic rather than a surprise. */}
                     <dt className="text-ink-soft">
-                      Service fee{petCount > 1 && <> · ₹{unit} × {petCount} pets</>}
+                      {askVaccine ? "Visit fee" : "Service fee"}
+                      {petCount > 1 && <> · ₹{unit} × {petCount} pets</>}
                     </dt>
-                    <dd className="font-semibold text-ink">₹{base}</dd>
+                    <dd className="font-semibold text-ink">₹{visitFee}</dd>
                   </div>
+                  {vaccineTotal > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-soft">
+                        Vaccine{petCount > 1 ? "s" : ""}
+                      </dt>
+                      <dd className="font-semibold text-ink">₹{vaccineTotal}</dd>
+                    </div>
+                  )}
                   {gst > 0 && (
                     <div className="flex justify-between gap-4">
                       <dt className="text-ink-soft">GST ({Math.round(rate * 100)}%)</dt>
