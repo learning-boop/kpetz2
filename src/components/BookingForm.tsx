@@ -94,7 +94,25 @@ type FormState = {
 };
 
 /** Which times are taken, by date then doctor, as reported by the API. */
-type Booked = Record<string, Record<string, string[]>>;
+/**
+ * What a date looks like for each doctor, as the availability endpoint
+ * reports it. The two reasons a time is gone are kept apart because they
+ * read differently to the person choosing: someone else has it, or the vet
+ * can't make it.
+ */
+type DayAvailability = {
+  /** Doctor → times another customer has booked. */
+  booked: Record<string, string[]>;
+  /** Doctor → times staff have blocked in the admin. */
+  unavailable: Record<string, string[]>;
+  /** Doctors not working at all that day. */
+  dayOff: string[];
+};
+
+/** Keyed by date, fetched once per date. */
+type Booked = Record<string, DayAvailability>;
+
+const EMPTY_DAY: DayAvailability = { booked: {}, unavailable: {}, dayOff: [] };
 
 /**
  * Makes the form's choices consistent with the options: a home visit is
@@ -244,7 +262,13 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
    */
   const [booked, setBooked] = useState<Booked>({});
   const [slotWarning, setSlotWarning] = useState<string | null>(null);
-  const takenSlots = booked[form.date]?.[form.doctor] ?? [];
+
+  const day = booked[form.date] ?? EMPTY_DAY;
+  const takenSlots = day.booked[form.doctor] ?? [];
+  const blockedSlots = day.unavailable[form.doctor] ?? [];
+  const doctorOffToday = day.dayOff.includes(form.doctor);
+  /** Either reason, for the checks that only care that a time is gone. */
+  const goneSlots = [...takenSlots, ...blockedSlots];
 
   useEffect(() => {
     if (!API_BASE || !rules?.timeSlot || !form.date || form.date in booked) return;
@@ -253,8 +277,18 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
       headers: { Accept: "application/json" },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((body: { booked?: Record<string, string[]> }) => {
-        if (live && body.booked) setBooked((b) => ({ ...b, [form.date]: body.booked ?? {} }));
+      .then((body: Partial<DayAvailability>) => {
+        if (!live) return;
+        // An older API answers with booked alone; the rest defaults to empty
+        // rather than leaving the date unfetched and retried forever.
+        setBooked((b) => ({
+          ...b,
+          [form.date]: {
+            booked: body.booked ?? {},
+            unavailable: body.unavailable ?? {},
+            dayOff: body.dayOff ?? [],
+          },
+        }));
       })
       .catch(() => {
         /* Nothing greyed out; the server still refuses a clash on submit. */
@@ -265,13 +299,14 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   }, [form.date, rules?.timeSlot, booked]);
 
   // A time chosen before the list arrived, or before the doctor changed, may
-  // turn out to be taken — drop it rather than carry it to the summary.
+  // turn out to be taken or blocked since — drop it rather than carry it to
+  // the summary and have the server refuse it at the last step.
   useEffect(() => {
-    if (form.slot && takenSlots.includes(form.slot)) {
+    if (form.slot && goneSlots.includes(form.slot)) {
       setForm((f) => ({ ...f, slot: "" }));
       setSlotWarning(`${form.doctor} is not available at ${form.slot}. Please choose another time.`);
     }
-  }, [form.slot, form.doctor, takenSlots]);
+  }, [form.slot, form.doctor, goneSlots]);
 
   // Someone can attach photos to an online consultation and then switch to a
   // home visit, which doesn't ask for any. Dropping them here stops files the
@@ -281,7 +316,7 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
   }, [rules, files.length]);
 
   const chooseSlot = (time: string) => {
-    if (takenSlots.includes(time)) {
+    if (goneSlots.includes(time) || doctorOffToday) {
       setSlotWarning(`${form.doctor} is not available at ${time}. Please choose another time.`);
       return;
     }
@@ -902,17 +937,29 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   <legend className={LABEL}>Choose a time</legend>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {SLOTS.map((time) => {
+                      // Both reasons close a time, but they are worth telling
+                      // apart on hover: "someone has it" is bad luck, "the vet
+                      // isn't working" may mean trying the other doctor.
                       const taken = takenSlots.includes(time);
+                      const blocked = doctorOffToday || blockedSlots.includes(time);
+                      const gone = taken || blocked;
+
                       return (
                         <button
                           key={time}
                           type="button"
                           onClick={() => chooseSlot(time)}
                           aria-pressed={form.slot === time}
-                          aria-disabled={taken}
-                          title={taken ? `${form.doctor} is booked at this time` : undefined}
+                          aria-disabled={gone}
+                          title={
+                            blocked
+                              ? `${form.doctor} is not available at this time`
+                              : taken
+                                ? `${form.doctor} is booked at this time`
+                                : undefined
+                          }
                           className={`rounded-full px-2 py-2.5 font-display text-[12px] font-extrabold transition ${
-                            taken
+                            gone
                               ? "cursor-not-allowed bg-white/30 text-white/60 line-through"
                               : form.slot === time
                                 ? "bg-ink text-white"
@@ -925,7 +972,20 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                     })}
                   </div>
 
-                  {slotWarning && (
+                  {/* A doctor who isn't working that day gets one clear line,
+                      rather than leaving the customer to work it out from a
+                      grid where every single time is crossed out. */}
+                  {doctorOffToday && (
+                    <p
+                      role="alert"
+                      className="mt-3 rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink"
+                    >
+                      {form.doctor} is not available on this date. Please choose another date
+                      {options.doctors.length > 1 ? " or the other doctor" : ""}.
+                    </p>
+                  )}
+
+                  {slotWarning && !doctorOffToday && (
                     <p
                       role="alert"
                       className="mt-3 rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-ink"
@@ -937,8 +997,8 @@ export default function BookingForm({ service, doctor, onSuccess }: Props) {
                   <p className="mt-2.5 text-xs font-semibold text-white/80">
                     {!form.doctor || !form.date
                       ? "Choose a doctor and a date to see which times are free."
-                      : takenSlots.length
-                        ? "Crossed-out times are already booked with this doctor."
+                      : goneSlots.length
+                        ? "Crossed-out times aren't available with this doctor."
                         : "Clinic hours, 9am–9pm. We'll ring you back to confirm."}
                   </p>
                 </fieldset>
